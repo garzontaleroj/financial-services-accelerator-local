@@ -17,11 +17,13 @@
  */
 
 window.env = {
-    // This option can be retrieved in "src/index.js" with "window.env.API_URL".
-    // If the consent manager is deployed in a different server than the IS, USE_DEFAULT_CONFIGS must be set to false
-    // and the SERVER_URL needs to be configured.
-    USE_DEFAULT_CONFIGS: true,
-    SERVER_URL: 'https://localhost:9446',
+    // USE_DEFAULT_CONFIGS: false routes OAuth2 calls to SERVER_URL (the IS).
+    // With true, the app uses its own origin as the server which causes a
+    // redirect loop when nginx is serving the SPA on a different port than IS.
+    USE_DEFAULT_CONFIGS: false,
+    // Point to the nginx reverse proxy so all requests stay on the same origin.
+    // Nginx will forward /oauth2/, /consentmgr/scp* and /oidc/ to the IS.
+    SERVER_URL: 'http://localhost:3000',
     TENANT_DOMAIN: 'carbon.super',
     NUMBER_OF_CONSENTS: 20,
     VERSION: '4.0.0',

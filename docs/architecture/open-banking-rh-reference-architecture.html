@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>open-banking-rh-reference-architecture.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="arquitectura-de-referencia--open-banking-sobre-red-hat-openshift">Arquitectura de Referencia — Open Banking sobre Red Hat OpenShift</h1>
+<blockquote>
+<p><strong>Versión:</strong> 1.0.0<br>
+<strong>Fecha:</strong> 2026-06-25<br>
+<strong>Plataforma objetivo:</strong> Red Hat OpenShift Container Platform 4.14+<br>
+<strong>Autor:</strong> Juan Pablo Garzon<br>
+<strong>Revisor:</strong> Ronald Lopez<br>
+<strong>Estado:</strong> Documento de referencia técnica</p>
+</blockquote>
+<hr>
+<h2 id="tabla-de-contenidos">Tabla de Contenidos</h2>
+<ol>
+<li><a href="#1-visi%C3%B3n-general">Visión General</a></li>
+<li><a href="#2-implementaciones-red-hat-para-open-banking">Implementaciones Red Hat para Open Banking</a></li>
+<li><a href="#3-componentes-de-la-arquitectura">Componentes de la Arquitectura</a></li>
+<li><a href="#4-diagrama-de-arquitectura-l%C3%B3gica">Diagrama de Arquitectura Lógica</a></li>
+<li><a href="#5-diagrama-de-flujo-de-petici%C3%B3n-request-flow">Diagrama de Flujo de Petición (Request Flow)</a></li>
+<li><a href="#6-diagrama-de-componentes--capa-de-api-management">Diagrama de Componentes — Capa de API Management</a></li>
+<li><a href="#7-diagrama-de-componentes--capa-de-identidad-y-consentimiento">Diagrama de Componentes — Capa de Identidad y Consentimiento</a></li>
+<li><a href="#8-arquitectura-de-despliegue-en-ocp">Arquitectura de Despliegue en OCP</a></li>
+<li><a href="#9-modelo-de-datos-y-bases-de-datos">Modelo de Datos y Bases de Datos</a></li>
+<li><a href="#10-pol%C3%ADticas-de-api-3scale">Políticas de API (3scale)</a></li>
+<li><a href="#11-consideraciones-de-seguridad-y-fapi">Consideraciones de Seguridad y FAPI</a></li>
+<li><a href="#12-escalabilidad-y-alta-disponibilidad">Escalabilidad y Alta Disponibilidad</a></li>
+<li><a href="#13-manifiestos-ocp-de-referencia">Manifiestos OCP de Referencia</a></li>
+</ol>
+<hr>
+<h2 id="1-visión-general">1. Visión General</h2>
+<p>Esta arquitectura de referencia describe el despliegue de Open Banking / Open Finance usando exclusivamente el ecosistema <strong>Red Hat</strong> sobre <strong>OpenShift Container Platform (OCP)</strong>. Los servicios de negocio financiero (Gestión de Consentimientos, Notificaciones de Eventos, APIs de Cuentas, Pagos y VRP) son implementados como microservicios <strong>Quarkus 3.8</strong> nativos para la nube.</p>
+<p>La propuesta tiene tres objetivos estratégicos:</p>
+<ul>
+<li><strong>Vendor único</strong> — toda la infraestructura, desde el gateway hasta el runtime de los microservicios, usa productos con soporte Red Hat. Esto simplifica los acuerdos de licenciamiento, el soporte técnico y las actualizaciones de seguridad.</li>
+<li><strong>Cumplimiento regulatorio por diseño</strong> — Keycloak incluye perfiles FAPI certificados por la OpenID Foundation. Las políticas de seguridad no son configuraciones manuales sino artefactos versionados en Git y validados en tiempo de despliegue.</li>
+<li><strong>Arquitectura cloud-native</strong> — todos los componentes operan como contenedores en OCP, escalan horizontalmente de forma autónoma (HPA), se despliegan mediante GitOps (ArgoCD) y se monitorean con el stack de observabilidad nativo de OpenShift.</li>
+</ul>
+<h3 id="capacidades-principales">Capacidades principales</h3>
+<table>
+<thead>
+<tr>
+<th>Capacidad</th>
+<th>Componente Red Hat</th>
+<th>Estándar cubierto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dynamic Client Registration (DCR)</strong></td>
+<td>Keycloak 26 (nativo)</td>
+<td>RFC 7591, FAPI 1.0</td>
+</tr>
+<tr>
+<td><strong>Consent Management</strong></td>
+<td>ob-consent-service (Quarkus)</td>
+<td>Open Banking UK, PSD2</td>
+</tr>
+<tr>
+<td><strong>Event Notifications</strong></td>
+<td>ob-event-notifications (Quarkus)</td>
+<td>RFC 8417 (SET), SSE</td>
+</tr>
+<tr>
+<td><strong>mTLS Enforcement</strong></td>
+<td>Red Hat Service Mesh (Istio)</td>
+<td>FAPI 1.0 Advanced</td>
+</tr>
+<tr>
+<td><strong>API Gateway</strong></td>
+<td>Red Hat 3scale API Management</td>
+<td>OAuth2, PKCE, FAPI</td>
+</tr>
+<tr>
+<td><strong>SCA (Strong Customer Authentication)</strong></td>
+<td>Keycloak Auth Flows + WebAuthn</td>
+<td>PSD2 RTS, FAPI 2</td>
+</tr>
+<tr>
+<td><strong>Mock Bank APIs</strong></td>
+<td>ob-bank-backend (Quarkus)</td>
+<td>Open Banking UK v4.0</td>
+</tr>
+<tr>
+<td><strong>Self-Care Portal</strong></td>
+<td>React SPA + nginx</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="versiones-de-componentes">Versiones de componentes</h3>
+<table>
+<thead>
+<tr>
+<th>Producto</th>
+<th>Versión</th>
+<th>Canal de soporte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Red Hat OpenShift Container Platform</td>
+<td>4.14 (EUS)</td>
+<td>Red Hat</td>
+</tr>
+<tr>
+<td>Red Hat 3scale API Management</td>
+<td>2.14</td>
+<td>Red Hat (Operador)</td>
+</tr>
+<tr>
+<td>Keycloak (Red Hat SSO 2)</td>
+<td>26.x</td>
+<td>Red Hat</td>
+</tr>
+<tr>
+<td>Red Hat Service Mesh</td>
+<td>2.6 (Istio 1.20)</td>
+<td>Red Hat (Operador)</td>
+</tr>
+<tr>
+<td>Red Hat AMQ Streams</td>
+<td>2.7 (Kafka 3.7)</td>
+<td>Red Hat (Operador)</td>
+</tr>
+<tr>
+<td>Quarkus</td>
+<td>3.8.x (LTS)</td>
+<td>Red Hat Build of Quarkus</td>
+</tr>
+<tr>
+<td>MySQL</td>
+<td>8.0 (via MySQL Operator)</td>
+<td>Community / Percona</td>
+</tr>
+<tr>
+<td>Flyway</td>
+<td>10.x</td>
+<td>Community</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="2-implementaciones-red-hat-para-open-banking">2. Implementaciones Red Hat para Open Banking</h2>
+<p>Antes de diseñar una arquitectura propia, es fundamental conocer qué ofrece Red Hat de forma nativa para el sector financiero. Esta sección documenta las capacidades ya disponibles en los productos Red Hat que son directamente aplicables a Open Banking, evitando desarrollos innecesarios y apoyándose en certificaciones y validaciones del ecosistema.</p>
+<h3 id="21-keycloak-y-fapi-financial-grade-api">2.1 Keycloak y FAPI (Financial-grade API)</h3>
+<p>Red Hat distribuye Keycloak (desde v21) con <strong>perfiles globales de seguridad pre-configurados</strong> para Open Banking. Estos perfiles cumplen los estándares internacionales requeridos para banca abierta:</p>
+<table>
+<thead>
+<tr>
+<th>Perfil Global</th>
+<th>Estándar</th>
+<th>Capacidades incluidas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fapi-1-baseline</code></td>
+<td>FAPI 1.0 Baseline</td>
+<td>PKCE obligatorio, mTLS, redirect URI exactas</td>
+</tr>
+<tr>
+<td><code>fapi-1-advanced</code></td>
+<td>FAPI 1.0 Advanced</td>
+<td>Request Objects firmados (JAR), PAR, mTLS bound tokens</td>
+</tr>
+<tr>
+<td><code>fapi-ciba</code></td>
+<td>FAPI CIBA</td>
+<td>Backchannel authentication, binding_message</td>
+</tr>
+<tr>
+<td><code>fapi-2-security-profile</code></td>
+<td>FAPI 2 Security Profile</td>
+<td>DPoP, PAR obligatorio, PKCE S256</td>
+</tr>
+<tr>
+<td><code>oauth-2-1</code></td>
+<td>OAuth 2.1</td>
+<td>PKCE obligatorio, sin Implicit Flow</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Activación en Keycloak:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Realm client policy para FAPI 1.0 Advanced</span>
+{
+  <span class="hljs-attr">&quot;name&quot;:</span> <span class="hljs-string">&quot;openbanking-fapi-policy&quot;</span>,
+  <span class="hljs-attr">&quot;conditions&quot;:</span> [
+    { <span class="hljs-attr">&quot;condition&quot;:</span> <span class="hljs-string">&quot;client-roles&quot;</span>, <span class="hljs-attr">&quot;configuration&quot;:</span> { <span class="hljs-attr">&quot;roles&quot;:</span> [<span class="hljs-string">&quot;openbanking-tpp&quot;</span>] } }
+  ],
+  <span class="hljs-attr">&quot;profiles&quot;:</span> [<span class="hljs-string">&quot;fapi-1-advanced&quot;</span>]
+}
+</div></code></pre>
+<h3 id="22-keycloak-y-psd2--open-finance-colombia">2.2 Keycloak y PSD2 / Open Finance Colombia</h3>
+<p>Para el contexto regulatorio colombiano (Superintendencia Financiera de Colombia — SFC) y la adopción del marco PSD2 europeo como referencia, Keycloak provee nativamente los siguientes mecanismos sin necesidad de desarrollo adicional:</p>
+<ul>
+<li><strong>DCR (Dynamic Client Registration)</strong> — RFC 7591, RFC 7592</li>
+<li><strong>PAR (Pushed Authorization Requests)</strong> — RFC 9126</li>
+<li><strong>DPoP</strong> — RFC 9449 (feature <code>dpop</code> en Keycloak 24+)</li>
+<li><strong>Autenticación paso a paso (Step-Up)</strong> — mapeado a niveles de autenticación SCA</li>
+<li><strong>WebAuthn / Passkeys</strong> — FIDO2, W3C WebAuthn Level 3</li>
+<li><strong>CIBA (Client Initiated Backchannel Authentication)</strong> — flujos de pago asincrónico</li>
+</ul>
+<h3 id="23-red-hat-3scale-y-open-banking">2.3 Red Hat 3scale y Open Banking</h3>
+<p>3scale actúa como el punto de control centralizado para todas las APIs Open Banking expuestas hacia TPPs. Su rol no es solo proxy HTTP — es la capa de gobierno que aplica políticas de negocio (planes, límites, monetización) sobre las APIs técnicas expuestas por los microservicios Quarkus. 3scale API Management v2.14 incluye:</p>
+<ul>
+<li><strong>Policies nativas</strong> para rate limiting por TPP, transformación de headers, validación JWT</li>
+<li><strong>Developer Portal</strong> para onboarding self-service de TPPs con flujo de aprobación</li>
+<li><strong>Analytics</strong> por API, por plan, por aplicación — requerido para reporte regulatorio</li>
+<li><strong>ActiveDocs (OpenAPI)</strong> publicación del catálogo de APIs Open Banking</li>
+</ul>
+<h3 id="24-red-hat-en-el-ecosistema-financiero-global">2.4 Red Hat en el ecosistema financiero global</h3>
+<p>Red Hat no es nuevo en el sector financiero. Las siguientes referencias validan la madurez de la plataforma para casos de uso bancarios en producción, incluyendo proyectos de modernización similares al objetivo de este documento:</p>
+<table>
+<thead>
+<tr>
+<th>Cliente / Partner</th>
+<th>Caso de uso</th>
+<th>Tecnología RH</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Emirates NBD</strong></td>
+<td>Plataforma cloud para servicios bancarios innovadores</td>
+<td>OCP, JBoss EAP</td>
+</tr>
+<tr>
+<td><strong>Banco Galicia</strong></td>
+<td>Plataforma de IA para NLP en banca digital</td>
+<td>OCP, Red Hat AI</td>
+</tr>
+<tr>
+<td><strong>Finastra</strong></td>
+<td>Open Finance Platform (120+ bancos globales)</td>
+<td>OCP, 3scale</td>
+</tr>
+<tr>
+<td><strong>Temenos</strong></td>
+<td>Core bancario en contenedores</td>
+<td>OCP, JBoss EAP</td>
+</tr>
+<tr>
+<td><strong>ACI Worldwide</strong></td>
+<td>Pagos en tiempo real (ISO 20022)</td>
+<td>OCP, AMQ Streams</td>
+</tr>
+<tr>
+<td><strong>Capgemini Blueprint</strong></td>
+<td>Modernización bancaria (85% más rápida)</td>
+<td>OCP, Ansible</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="3-componentes-de-la-arquitectura">3. Componentes de la Arquitectura</h2>
+<p>La solución se divide en cinco capas lógicas, cada una con responsabilidades claras y aisladas. Esta separación permite escalar, actualizar y monitorear cada capa de forma independiente sin afectar a las demás.</p>
+<h3 id="31-capa-de-api-management--red-hat-3scale">3.1 Capa de API Management — Red Hat 3scale</h3>
+<p>Esta capa es el único punto de entrada para los TPPs externos. Ningún TPP accede directamente a los microservicios Quarkus — toda llamada pasa obligatoriamente por APIcast, donde se valida el token OAuth2, se verifica el consentimiento, se aplica el rate limiting y se enriquecen los headers antes de reenviar la petición al backend.</p>
+<pre class="hljs"><code><div>financial-services-accelerator-local/open-banking-rh/
+├── (integración con 3scale via admin REST API)
+└── Políticas de mediación via Camel K
+
+Componentes 3scale:
+├── APIManager (operador)      # Gestión central de APIs
+├── Developer Portal           # Self-service onboarding TPPs
+├── API Gateway (APICast)      # Proxy Nginx con políticas OIDC
+├── Backend (Redis + MySQL)    # Almacenamiento estado 3scale
+└── Zync                       # Sincronización Keycloak ↔ 3scale
+</div></code></pre>
+<h3 id="32-capa-de-identidad-y-consentimiento--keycloak--quarkus">3.2 Capa de Identidad y Consentimiento — Keycloak + Quarkus</h3>
+<p>Esta es la capa más crítica de la arquitectura desde el punto de vista regulatorio. Keycloak gestiona las identidades de clientes y TPPs, emite y valida los tokens OAuth2/OIDC con perfiles FAPI. Los microservicios Quarkus implementan el ciclo de vida completo de los consentimientos (creación, autorización, validación, revocación) y el sistema de notificaciones de eventos (SET tokens RFC 8417) que informan a los TPPs sobre cambios de estado.</p>
+<pre class="hljs"><code><div>open-banking-rh/
+├── ob-consent-service/        # Gestión ciclo de vida consentimientos
+│   ├── ConsentResource.java   # CRUD consentimientos (JAX-RS)
+│   ├── ConsentAdminResource   # Admin: búsqueda y revocación
+│   ├── ConsentService.java    # Lógica de negocio (CDI)
+│   ├── ConsentEntity.java     # Hibernate Panache (MySQL)
+│   └── ConsentEventPublisher  # Kafka → AMQ Streams
+│
+├── ob-event-notifications/    # Notificaciones SET (RFC 8417)
+│   ├── EventSubscriptionResource  # Suscripciones webhook TPP
+│   ├── ConsentEventConsumer   # Kafka consumer
+│   └── EventNotificationEntity    # Persistencia (MySQL)
+│
+└── Keycloak Realm &quot;openbanking&quot;
+    ├── Authentication Flow SCA    # Password + WebAuthn/OTP
+    ├── Client Policy FAPI 2       # Perfiles seguridad globales
+    ├── DCR Endpoint               # Registro dinámico TPPs
+    └── JWKS Endpoint              # Claves públicas para verificación
+</div></code></pre>
+<h3 id="33-capa-de-apis-de-negocio--quarkus-backend">3.3 Capa de APIs de Negocio — Quarkus Backend</h3>
+<p>Implementa los contratos de la especificación Open Banking UK v4.0 como APIs REST. En la arquitectura actual utiliza datos de prueba (mock), pero el diseño permite sustituir las implementaciones por llamadas reales al core bancario sin cambiar los contratos de API expuestos hacia los TPPs. El patrón Strangler Fig permite migrar endpoint por endpoint en producción.</p>
+<pre class="hljs"><code><div>open-banking-rh/ob-bank-backend/
+├── AccountResource.java       # GET /accounts, /accounts/{id}
+│                              # GET /accounts/{id}/balances
+│                              # GET /accounts/{id}/transactions
+├── PaymentResource.java       # POST /payments/domestic-payments
+│                              # GET  /payments/domestic-payments/{id}
+├── FundsConfirmationResource  # POST /funds-confirmations
+└── VrpResource.java           # POST/GET /domestic-vrps
+</div></code></pre>
+<h3 id="34-capa-de-mensajería--amq-streams-kafka">3.4 Capa de Mensajería — AMQ Streams (Kafka)</h3>
+<p>Kafka desacopla los microservicios y garantiza la entrega de eventos con durabilidad configurable. Los eventos de consentimiento fluyen desde <code>ob-consent-service</code> hacia <code>ob-event-notifications</code> a través del topic <code>ob-consent-events</code>, permitiendo que ambos servicios escalen de forma independiente. El topic <code>ob-audit-events</code> actúa como un log inmutable de auditoría regulatoria con retención configurable para cumplir los 5 años exigidos por la SFC.</p>
+<pre class="hljs"><code><div>Topics Kafka:
+├── ob-consent-events          # Ciclo de vida consentimientos
+│   └── payload: {eventType, consentId, clientId, userId, status}
+├── ob-payment-events          # Estados de pagos
+│   └── payload: {paymentId, status, accountId, amount}
+└── ob-audit-events            # Trazabilidad para cumplimiento SFC
+    └── payload: {action, actor, resource, timestamp, ipAddress}
+</div></code></pre>
+<h3 id="35-capa-de-observabilidad">3.5 Capa de Observabilidad</h3>
+<p>La observabilidad en Open Banking no es opcional — es un requisito regulatorio. Los bancos deben demostrar ante la SFC que pueden auditar cada acceso a datos de clientes, detectar anomalías en tiempo real y responder ante incidentes de seguridad. La arquitectura implementa los <strong>tres pilares de observabilidad</strong>: métricas, logs y trazas distribuidas, más un cuarto pilar específico de Open Banking: el <strong>log de auditoría regulatoria</strong>.</p>
+<ul>
+<li><strong>Prometheus + Grafana</strong> — Métricas operacionales (latencia, throughput, errores HTTP). Dashboards de SLA regulatorio que muestran el cumplimiento del límite de 2 segundos por API.</li>
+<li><strong>Loki + Fluentd</strong> — Agregación de logs de todos los pods. Loki (solución nativa de Grafana Labs, compatible con OCP) permite consultas de logs con el mismo lenguaje que Prometheus (LogQL), facilitando correlación directa entre métricas y logs en el mismo dashboard de Grafana.</li>
+<li><strong>Jaeger (Distributed Tracing)</strong> — Trazas end-to-end desde el gateway hasta la base de datos, usando el <code>x-b3-traceid</code> como correlationId. Esencial para diagnosticar latencias y auditar flujos de autorización FAPI.</li>
+<li><strong>EFK Stack</strong> — Elasticsearch + Fluentd + Kibana para el almacenamiento a largo plazo (5 años) de logs de auditoría regulatoria. Indexado por consentId, tppId y userId para búsquedas forenses.</li>
+</ul>
+<pre class="hljs"><code><div>Monitoring Stack:
+├── Prometheus (OCP Monitoring Stack)
+│   └── Metricas: latencia APIs, JVM heap, DB pools, Kafka consumer lag
+├── Grafana
+│   └── Dashboards: SLA regulatorio (p95/p99), TPP usage, consent funnel
+├── Loki + Fluentd
+│   └── Logs centralizados con LogQL — correlacion metricas/logs en Grafana
+├── Jaeger (via Red Hat Service Mesh)
+│   └── Trazas distribuidas — correlationId FAPI por peticion
+└── EFK Stack (Elasticsearch + Fluentd + Kibana)
+    └── Audit trail regulatorio — retencion 5 anos — indexado por consent/tpp/user
+</div></code></pre>
+<hr>
+<h2 id="4-diagrama-de-arquitectura-lógica">4. Diagrama de Arquitectura Lógica</h2>
+<p>El siguiente diagrama representa la vista lógica completa de la solución Open Banking sobre Red Hat OCP. Se organiza en <strong>siete capas horizontales</strong> que fluyen de arriba hacia abajo:</p>
+<ol>
+<li><strong>Actores externos</strong> — TPPs (terceros fintech), clientes bancarios (PSU) y administradores del banco.</li>
+<li><strong>DMZ / Ingress</strong> — Punto de entrada único con terminación TLS gestionado por el HAProxy de OCP.</li>
+<li><strong>API Management (3scale)</strong> — Capa de gobierno de APIs: autenticación OAuth2, rate limiting, políticas FAPI y Developer Portal para onboarding de TPPs.</li>
+<li><strong>Identidad y Consentimiento</strong> — Keycloak gestiona identidades, DCR, SCA y emite tokens. Los microservicios Quarkus administran el ciclo de vida de consentimientos y notificaciones de eventos.</li>
+<li><strong>APIs de Negocio</strong> — Backend Quarkus que expone las APIs Open Banking UK v4.0 (cuentas, pagos, VRP, confirmación de fondos).</li>
+<li><strong>Mensajería</strong> — AMQ Streams (Kafka) desacopla eventos de consentimiento, pagos y auditoría entre microservicios.</li>
+<li><strong>Persistencia y Observabilidad</strong> — MySQL para datos transaccionales; Prometheus, Grafana, Loki, Jaeger y EFK para visibilidad operacional.</li>
+</ol>
+<p>Las líneas continuas representan llamadas síncronas HTTP/gRPC; las líneas punteadas representan flujos de telemetría asíncrona.</p>
+<pre><code class="language-mermaid"><div class="mermaid">graph TB
+    T1[TPP / App Fintech]
+    T2[Cliente - PSU]
+    T3[Admin Banco]
+
+    I1[OCP HAProxy - TLS Termination]
+
+    G1[3scale APIcast
+OAuth2 + FAPI Policies]
+    G2[Developer Portal
+TPP Onboarding]
+    G3[Admin Portal
+Analytics]
+    G4[Zync
+Keycloak sync]
+
+    K1[Keycloak 26
+Realm openbanking]
+    K2[DCR Endpoint
+RFC 7591]
+    K3[FAPI 2 Policies
+PAR + DPoP + mTLS]
+    K4[Auth Flow SCA
+Password + WebAuthn]
+
+    C1[ob-consent-service
+Quarkus :8081]
+    C2[ob-event-notifications
+Quarkus :8082]
+    C3[Self-Care Portal
+React + nginx :80]
+
+    B1[ob-bank-backend
+Quarkus :8083]
+    B2[Accounts API
+v4.0]
+    B3[Payments API
+v4.0]
+    B4[Funds Confirmation
+v4.0]
+
+    M1[AMQ Streams Kafka
+3 brokers]
+    M2[ob-consent-events]
+    M3[ob-payment-events]
+    M4[ob-audit-events]
+
+    D1[(MySQL ob_consent)]
+    D2[(MySQL ob_events)]
+    D3[(MySQL keycloak)]
+    D4[(MySQL 3scale)]
+
+    O1[Prometheus + Grafana
+Metricas y Alertas]
+    O2[Loki + Fluentd
+Aggregacion de Logs]
+    O3[Jaeger
+Distributed Tracing]
+    O4[EFK Stack
+Auditoria 5 anos]
+
+    T1 -->|HTTPS mTLS| I1
+    T2 -->|HTTPS| I1
+    T3 -->|HTTPS| I1
+
+    I1 --> G1
+    I1 --> K1
+    I1 --> C3
+    I1 --> G2
+
+    G1 -->|introspect token| K1
+    G1 -->|validate consent| C1
+    G1 -->|API call| B1
+    G4 --> G3
+
+    K1 --> K2
+    K1 --> K3
+    K1 --> K4
+    K1 --> G4
+    K1 --> D3
+
+    T2 -->|OAuth2 + SCA| K1
+    T2 --> C3
+    C3 -->|Consent API| C1
+
+    C1 --> D1
+    C1 --> M2
+    M2 --> M1
+    M1 --> C2
+    C2 --> D2
+
+    B1 --> B2
+    B1 --> B3
+    B1 --> B4
+    B1 --> M3
+    B1 --> M4
+    M3 --> M1
+    M4 --> M1
+
+    G1 --> D4
+
+    C1 -.->|metricas traces logs| O1
+    C1 -.->|logs| O2
+    C1 -.->|traces| O3
+    G1 -.->|metricas logs| O1
+    G1 -.->|logs| O2
+    K1 -.->|metricas traces| O1
+    K1 -.->|traces| O3
+    B1 -.->|metricas logs| O1
+    M1 -.->|audit logs| O4
+    M4 -.->|audit events| O4
+</div></code></pre>
+<hr>
+<h2 id="5-diagrama-de-flujo-de-petición-request-flow">5. Diagrama de Flujo de Petición (Request Flow)</h2>
+<p>Esta sección documenta los cuatro flujos de petición más importantes de la arquitectura Open Banking. Cada diagrama de secuencia describe el camino exacto que recorre una petición, incluyendo los actores internos y los pasos de validación de seguridad en cada salto. Estos flujos son la base para definir las pruebas de integración end-to-end y para validar el cumplimiento regulatorio.</p>
+<h3 id="51-flujo-de-registro-de-tpp-dcr--dynamic-client-registration">5.1 Flujo de Registro de TPP (DCR — Dynamic Client Registration)</h3>
+<p>El registro dinámico de clientes es el proceso mediante el cual un TPP (fintech autorizado) obtiene sus credenciales OAuth2 para interactuar con las APIs del banco. En lugar de un proceso manual de configuración, DCR automatiza el registro mediante un software statement assertion (SSA) firmado por la entidad regulatoria. Keycloak valida esta firma, crea el client en el realm <code>openbanking</code> y sincroniza la aplicación en 3scale.</p>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant TPP as TPP (Fintech)
+    participant Portal as 3scale Developer Portal
+    participant GW as 3scale APIcast
+    participant KC as Keycloak DCR
+    participant Zync as Zync (sync)
+
+    TPP->>Portal: 1. Accede al Developer Portal
+    Portal-->>TPP: 2. Formulario de registro + ToS
+    TPP->>KC: 3. POST /realms/openbanking/clients-registrations/openid-connect\n{software_statement JWT, redirect_uris, ...}
+    KC->>KC: 4. Valida software statement SSA\n(firma + claims obligatorios)
+    KC-->>TPP: 5. 201 Created\n{client_id, client_secret, registration_access_token}
+    KC->>Zync: 6. Sincroniza nuevo client → 3scale Application
+    Zync->>Portal: 7. Crea Application en Developer Portal
+    Portal-->>TPP: 8. API Keys activadas (user_key / app_id + app_key)
+    Note over TPP,KC: El TPP puede ahora iniciar flujos OAuth2/OIDC
+</div></code></pre>
+<h3 id="52-flujo-de-consentimiento-del-cliente-oauth2--sca">5.2 Flujo de Consentimiento del Cliente (OAuth2 + SCA)</h3>
+<p>El consentimiento es el núcleo regulatorio de Open Banking. El cliente bancario (PSU) debe autorizar explícitamente qué datos puede acceder un TPP, por cuánto tiempo y con qué granularidad. Este flujo implementa el <strong>Authorization Code Flow + PKCE</strong> de OAuth2 con un paso de <strong>SCA (Strong Customer Authentication)</strong> — dos factores de autenticación requeridos por PSD2 RTS y el marco colombiano de la SFC. El consentimiento se persiste en MySQL y su estado se sincroniza a través de Kafka hacia el sistema de notificaciones.</p>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant TPP as TPP App
+    participant GW as 3scale Gateway
+    participant KC as Keycloak
+    participant PSU as Cliente (PSU)
+    participant CONSENT as ob-consent-service
+    participant DB as MySQL ob_consent
+
+    TPP->>GW: 1. POST /api/fs/consent/v1.0/consents\n{consentType: ACCOUNT_ACCESS, receipt: {...}}
+    GW->>KC: 2. Valida Bearer token TPP (introspection)
+    KC-->>GW: 3. Token válido {azp: "tpp-client-id"}
+    GW->>CONSENT: 4. Crea consentimiento
+    CONSENT->>DB: 5. INSERT consent {status: AWAITING_AUTHORISATION}
+    DB-->>CONSENT: 6. consent_id (UUID)
+    CONSENT-->>GW: 7. 201 Created {consentId, status, ...}
+    GW-->>TPP: 8. consent_id + auth URL
+
+    TPP->>PSU: 9. Redirige a Keycloak (con PAR/request_uri)
+    PSU->>KC: 10. Autenticación: usuario + contraseña
+    KC->>KC: 11. SCA: WebAuthn / OTP (nivel 2)
+    PSU->>KC: 12. Completa SCA
+    KC->>CONSENT: 13. PUT /consents/{id}/authorise\n{userId: "sub-keycloak"}
+    CONSENT->>DB: 14. UPDATE status = AUTHORISED, userId = ...
+    CONSENT-->>KC: 15. Consentimiento autorizado
+    KC-->>PSU: 16. Redirige con authorization_code
+
+    PSU->>TPP: 17. authorization_code
+    TPP->>KC: 18. POST /token (code exchange + PKCE verifier)
+    KC-->>TPP: 19. access_token (bound a consentId + TPP cert)\n+ refresh_token + id_token
+</div></code></pre>
+<h3 id="53-flujo-de-llamada-a-api-protegida-cuentas">5.3 Flujo de Llamada a API Protegida (Cuentas)</h3>
+<p>Una vez que el TPP tiene un <code>access_token</code> vinculado a un consentimiento autorizado, puede consumir las APIs del banco. Este flujo muestra los controles de seguridad que se aplican en <strong>cada petición</strong>: validación del certificado mTLS del TPP, rate limiting, introspección del token en Keycloak, validación del estado del consentimiento y enriquecimiento de headers antes de llegar al backend. La auditoría de cada llamada se publica en Kafka de forma asíncrona para no impactar la latencia.</p>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant TPP as TPP
+    participant GW as 3scale APIcast
+    participant KC as Keycloak
+    participant CONSENT as ob-consent-service
+    participant BE as ob-bank-backend
+    participant KAFKA as AMQ Streams
+
+    TPP->>GW: 1. GET /accounts - Authorization Bearer token + mTLS cert
+
+    GW->>GW: 2. Valida certificado mTLS del TPP
+    GW->>GW: 3. Rate limiting por TPP - 3scale policy
+
+    GW->>KC: 4. POST /token/introspect - token + client_id
+    KC-->>GW: 5. active=true, consent_id, scope=accounts, sub=user-id
+
+    GW->>CONSENT: 6. GET /consents/CONSENT_ID/validate?clientId=TPP_ID
+    CONSENT-->>GW: 7. valid=true - consentimiento AUTHORISED y vigente
+
+    GW->>GW: 8. Agrega headers: x-consent-id, x-tpp-id, x-user-id
+
+    GW->>BE: 9. GET /api/fs/backend/v1.0/accounts - headers enriquecidos
+    BE-->>GW: 10. 200 OK - lista de cuentas
+
+    GW-->>TPP: 11. 200 OK datos de cuentas autorizados
+
+    GW->>KAFKA: 12. Evento auditoria async - GET_ACCOUNTS, consentId, tppId
+</div></code></pre>
+<h3 id="54-flujo-de-iniciación-de-pago-domestic-payment">5.4 Flujo de Iniciación de Pago (Domestic Payment)</h3>
+<p>Los pagos requieren controles adicionales respecto a la consulta de cuentas. FAPI 2 exige SCA específica para cada pago — el cliente debe confirmar la operación con segundo factor incluso si ya está autenticado. Una vez procesado el pago por el backend, el estado final (<code>AcceptedSettlementCompleted</code>) se notifica al TPP de forma asíncrona mediante un <strong>SET token</strong> (Security Event Token, RFC 8417) enviado a su webhook registrado.</p>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant TPP as TPP App Pagos
+    participant GW as 3scale Gateway
+    participant KC as Keycloak
+    participant CONSENT as ob-consent-service
+    participant BE as ob-bank-backend
+    participant KAFKA as AMQ Streams
+    participant EVENTS as ob-event-notifications
+
+    TPP->>GW: 1. POST /payments/domestic-payments - InstructedAmount, CreditorAccount
+    GW->>KC: 2. Valida token - consent tipo DOMESTIC_PAYMENT
+    GW->>CONSENT: 3. Valida consentimiento de pago
+    CONSENT-->>GW: 4. Consentimiento AUTHORISED
+
+    Note over KC,TPP: SCA requerida para confirmacion de pago especifico
+    GW->>KC: 5. Solicita confirmacion SCA del pago
+    KC->>TPP: 6. Redirige para SCA - kc_action con nivel loa-2
+    TPP->>KC: 7. Usuario confirma pago con WebAuthn u OTP
+    KC-->>GW: 8. Token de pago confirmado - scope payments:initiate
+
+    GW->>BE: 9. POST /api/fs/backend/v1.0/payments/domestic-payments
+    BE-->>GW: 10. 201 Created - paymentId, status AcceptedSettlementInProcess
+    GW-->>TPP: 11. 201 Created con payment_id
+
+    BE->>KAFKA: 12. Publica PaymentInitiated de forma asincrona
+    KAFKA->>EVENTS: 13. Consumer procesa evento de pago
+    EVENTS->>EVENTS: 14. Genera SET token RFC 8417
+    EVENTS->>TPP: 15. POST callbackUrl del TPP con SET token
+</div></code></pre>
+<hr>
+<h2 id="6-diagrama-de-componentes--capa-de-api-management">6. Diagrama de Componentes — Capa de API Management</h2>
+<p>Red Hat 3scale API Management es el corazón de la capa de gobierno de APIs. Este diagrama muestra la arquitectura interna de 3scale desplegada en OCP y su relación con las seis APIs Open Banking publicadas. Cada API tiene asociado un conjunto de políticas que se aplican secuencialmente en el pipeline de APIcast: primero la validación mTLS del certificado del TPP, luego la validación del token OIDC contra Keycloak, después la política de consent enforcement que consulta al <code>ob-consent-service</code>, y finalmente el rate limiting que previene el abuso de la plataforma.</p>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart LR
+    subgraph S1[3scale API Management]
+        APICAST[APIcast Gateway]
+        BACKEND[3scale Backend]
+        SYSTEM[System - Admin Portal]
+        ZYNC2[Zync - Keycloak sync]
+        APICAST -->|usage reports| BACKEND
+        SYSTEM -->|configures| APICAST
+        ZYNC2 -->|sync clients| SYSTEM
+    end
+
+    subgraph S2[APIs Open Banking]
+        API_ACC[Account Info v4.0]
+        API_PAY[Payment Initiation v4.0]
+        API_FUNDS[Funds Confirmation v4.0]
+        API_VRP[VRP v4.0]
+        API_CONSENT[Consent Mgmt v1.0]
+        API_EVENTS[Event Notifications v1.0]
+    end
+
+    subgraph S3[Politicas APIcast]
+        POL_OIDC[OIDC - Token Keycloak]
+        POL_RATE[Rate Limit - 500 RPM por TPP]
+        POL_MTLS[mTLS - Cert TPP]
+        POL_CONSENT[Consent Enforcement]
+        POL_HEADER[Header Enrichment]
+    end
+
+    APICAST --> API_ACC
+    APICAST --> API_PAY
+    APICAST --> API_FUNDS
+    APICAST --> API_VRP
+    APICAST --> API_CONSENT
+    APICAST --> API_EVENTS
+
+    APICAST --> POL_OIDC
+    APICAST --> POL_RATE
+    APICAST --> POL_MTLS
+    APICAST --> POL_CONSENT
+    APICAST --> POL_HEADER
+</div></code></pre>
+<hr>
+<h2 id="7-diagrama-de-componentes--capa-de-identidad-y-consentimiento">7. Diagrama de Componentes — Capa de Identidad y Consentimiento</h2>
+<p>Este diagrama detalla la relación entre Keycloak y los microservicios Quarkus de consentimiento y eventos. Keycloak es el único emisor de tokens en la plataforma — ningún otro componente emite JWTs. Los microservicios Quarkus se comunican con Keycloak únicamente para dos propósitos: validar tokens entrantes (via <code>quarkus-oidc</code>) y notificar cambios de estado de consentimiento (via <code>PUT /authorise</code> llamado desde los authentication flows de Keycloak).</p>
+<p>El <code>ob-consent-service</code> actúa también como componente de validación que 3scale consulta en cada petición de API. Esta arquitectura &quot;validate-on-every-call&quot; garantiza que si un cliente revoca un consentimiento, el bloqueo es efectivo en la siguiente petición — no al expirar el token.</p>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TB
+    subgraph KC[Keycloak - namespace fs-keycloak]
+        KC_REALM[Realm openbanking]
+        C_3SCALE[Client: 3scale-sync]
+        C_PORTAL[Client: self-care-portal]
+        C_TPPs[Clients: TPPs via DCR]
+        AF_BROWSER[Flow: browser-ob]
+        AF_DCR[Flow: first-broker-login]
+        AF_SCA[Flow: sca-payment FAPI2]
+        CP_FAPI2[Policy: fapi-2-open-banking]
+        CP_OAUTH21[Policy: oauth-2-1]
+        KC_REALM --> C_3SCALE
+        KC_REALM --> C_PORTAL
+        KC_REALM --> C_TPPs
+        KC_REALM --> AF_BROWSER
+        KC_REALM --> AF_DCR
+        KC_REALM --> AF_SCA
+        KC_REALM --> CP_FAPI2
+        KC_REALM --> CP_OAUTH21
+    end
+
+    subgraph CS[ob-consent-service - namespace fs-ob]
+        CS_API[ConsentResource - POST/GET/DELETE]
+        CS_ADM[ConsentAdminResource - GET admin]
+        CS_VAL[GET validate - usado por 3scale]
+        CS_AUTH[PUT authorise - usado por Keycloak]
+        CS_SVC[ConsentService - CDI]
+        CS_ENT[ConsentEntity - Panache MySQL]
+        CS_EVT[ConsentEventPublisher - Kafka]
+        CS_API --> CS_SVC
+        CS_ADM --> CS_SVC
+        CS_VAL --> CS_SVC
+        CS_AUTH --> CS_SVC
+        CS_SVC --> CS_ENT
+        CS_SVC --> CS_EVT
+    end
+
+    subgraph EV[ob-event-notifications - namespace fs-ob]
+        ES_API[EventSubscriptionResource]
+        ES_CONS[ConsentEventConsumer - Kafka]
+        ES_ENT[EventNotificationEntity - MySQL]
+        ES_CONS --> ES_ENT
+        ES_API --> ES_ENT
+    end
+
+    KC_REALM -->|token introspection| CS_VAL
+    KC_REALM -->|authorise consent| CS_AUTH
+    CS_EVT -->|ob-consent-events topic| ES_CONS
+</div></code></pre>
+<hr>
+<h2 id="8-arquitectura-de-despliegue-en-ocp">8. Arquitectura de Despliegue en OCP</h2>
+<p>La arquitectura de despliegue organiza todos los componentes en <strong>seis namespaces aislados</strong> dentro del clúster OCP. El aislamiento por namespace tiene tres beneficios: seguridad (NetworkPolicies restringen el tráfico entre capas), operabilidad (cada equipo gestiona su namespace con su propio RBAC) y observabilidad (las métricas y logs se pueden filtrar por namespace).</p>
+<p>El acceso externo está centralizado en OCP Routes con TLS, que son el único vector de entrada desde internet. Los servicios internos se comunican exclusivamente a través de ClusterIP Services con mTLS habilitado por Red Hat Service Mesh (Istio). Ningún microservicio de negocio expone una Route pública directamente — todo tráfico de TPPs pasa por 3scale APIcast.</p>
+<pre class="hljs"><code><div>Red Hat OpenShift Container Platform 4.14
+│
+├── Namespace: fs-3scale                     [API Management]
+│   ├── APIManager CR (3scale-operator)
+│   ├── Deployment: apicast-production        (3 réplicas)
+│   ├── Deployment: apicast-staging           (1 réplica)
+│   ├── Deployment: system-app               (2 réplicas)
+│   ├── Deployment: zync                     (2 réplicas)
+│   ├── Deployment: backend-worker           (2 réplicas)
+│   ├── PVC: mysql-storage                   (50Gi — RWO)
+│   ├── PVC: redis-storage                   (10Gi — RWO)
+│   ├── Route: api.apps.&lt;domain&gt;             (HTTPS — APIs externas TPP)
+│   ├── Route: admin.apps.&lt;domain&gt;           (HTTPS — Admin Portal)
+│   └── Route: developer.apps.&lt;domain&gt;       (HTTPS — Dev Portal TPPs)
+│
+├── Namespace: fs-keycloak                   [Identidad]
+│   ├── Keycloak CR (keycloak-operator)
+│   ├── Deployment: keycloak                 (3 réplicas — HA cluster)
+│   ├── PVC: keycloak-data                   (20Gi — RWO)
+│   ├── Route: auth.apps.&lt;domain&gt;            (HTTPS — OIDC endpoints)
+│   └── Secret: keycloak-db-secret
+│
+├── Namespace: fs-ob                         [Open Banking Services]
+│   ├── Deployment: ob-consent-service       (2 réplicas)
+│   │   ├── Port: 8081
+│   │   ├── Env: DB_HOST, KEYCLOAK_HOST, KAFKA_BOOTSTRAP
+│   │   ├── ConfigMap: consent-config
+│   │   └── Secret: consent-db-secret
+│   ├── Deployment: ob-event-notifications   (2 réplicas)
+│   │   ├── Port: 8082
+│   │   └── Secret: events-db-secret
+│   ├── Deployment: ob-bank-backend          (2 réplicas)
+│   │   └── Port: 8083
+│   ├── Deployment: self-care-portal         (2 réplicas — nginx)
+│   │   └── Port: 80
+│   ├── Service: ob-consent-svc              (ClusterIP)
+│   ├── Service: ob-events-svc               (ClusterIP)
+│   ├── Service: ob-backend-svc              (ClusterIP)
+│   ├── Service: portal-svc                  (ClusterIP)
+│   └── Route: portal.apps.&lt;domain&gt;          (HTTPS — Self-Care Portal)
+│
+├── Namespace: fs-messaging                  [Mensajería]
+│   ├── Kafka CR (amq-streams-operator)
+│   │   ├── Kafka: 3 brokers (3 réplicas)
+│   │   ├── ZooKeeper: 3 réplicas
+│   │   └── PVC: kafka-data-* (50Gi por broker)
+│   ├── KafkaTopic: ob-consent-events        (3 particiones, replica 2)
+│   ├── KafkaTopic: ob-payment-events        (3 particiones, replica 2)
+│   └── KafkaTopic: ob-audit-events          (6 particiones, replica 3)
+│
+├── Namespace: fs-database                   [Persistencia]
+│   ├── StatefulSet: mysql                   (3 nodos — InnoDB Cluster)
+│   ├── PVC: mysql-data-* (100Gi por nodo)
+│   └── Service: mysql-svc                   (ClusterIP)
+│
+├── Namespace: fs-service-mesh              [Seguridad mTLS]
+│   ├── ServiceMeshControlPlane (istio-operator)
+│   ├── ServiceMeshMemberRoll: [fs-ob, fs-3scale, fs-keycloak]
+│   ├── PeerAuthentication: STRICT (mTLS entre pods)
+│   └── AuthorizationPolicy: allow-inbound-tpp
+│
+└── Namespace: openshift-monitoring         [Observabilidad]
+    ├── Prometheus (OCP Monitoring Stack)
+    ├── Grafana (Community Operator + Loki datasource)
+    ├── Loki + Fluentd                       (Logs operacionales)
+    ├── Elasticsearch + Fluentd + Kibana     (EFK — Auditoria regulatoria 5 anos)
+    └── Jaeger (Red Hat Service Mesh)        (Distributed Tracing)
+</div></code></pre>
+<p><strong>Diagrama de comunicación entre namespaces:</strong></p>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart LR
+    Internet[TPP y PSU - Internet] -->|HTTPS TLS| Routes[OCP Routes HAProxy]
+    Routes --> NS3scale[fs-3scale APIcast]
+    Routes --> NSKeycloak[fs-keycloak Keycloak]
+    Routes --> NSPortal[fs-ob Self-Care Portal]
+
+    NS3scale -->|token introspection| NSKeycloak
+    NS3scale -->|consent validate| NSOB[fs-ob Consent Service]
+    NS3scale -->|API calls| NSBackend[fs-ob Bank Backend]
+
+    NSPortal -->|consent API| NSOB
+    NSPortal -->|OIDC auth| NSKeycloak
+
+    NSOB -->|events Kafka| NSKafka[fs-messaging AMQ Streams]
+    NSKafka -->|consume| NSEvents[fs-ob Event Notifications]
+
+    NSOB -->|SQL| NSDB[fs-database MySQL]
+    NSEvents -->|SQL| NSDB
+    NSKeycloak -->|SQL| NSDB
+    NS3scale -->|SQL Redis| NSDB
+
+    NSServiceMesh[fs-service-mesh Istio mTLS]
+    NSOB -.->|mTLS sidecar| NSServiceMesh
+    NS3scale -.->|mTLS sidecar| NSServiceMesh
+    NSBackend -.->|mTLS sidecar| NSServiceMesh
+</div></code></pre>
+<hr>
+<h2 id="9-modelo-de-datos-y-bases-de-datos">9. Modelo de Datos y Bases de Datos</h2>
+<p>El modelo de datos de Open Banking es deliberadamente minimalista: los consentimientos y las notificaciones de eventos son las únicas entidades propias de la solución. El resto del estado (identidades de usuarios, clients OAuth2, sesiones) lo gestiona Keycloak en su propia base de datos, y las métricas de API las gestiona 3scale en la suya. Esta separación evita el acoplamiento entre capas y permite escalar cada base de datos de forma independiente.</p>
+<p>Todas las migraciones de esquema se gestionan con <strong>Flyway</strong>, que ejecuta automáticamente los scripts al arrancar el servicio Quarkus. Esto garantiza que el esquema de base de datos está siempre en sincronía con la versión del código desplegada, un requisito crítico en entornos con despliegues frecuentes (GitOps).</p>
+<h3 id="91-base-de-datos-ob_consent-flyway-v1">9.1 Base de datos ob_consent (Flyway V1)</h3>
+<pre class="hljs"><code><div><span class="hljs-comment">-- Tabla principal de consentimientos</span>
+<span class="hljs-keyword">CREATE TABLE</span> ob_consent (
+    consent_id           <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">36</span>)   <span class="hljs-keyword">NOT NULL</span>,  <span class="hljs-comment">-- UUID</span>
+    client_id            <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>)  <span class="hljs-keyword">NOT NULL</span>,  <span class="hljs-comment">-- TPP client_id (Keycloak)</span>
+    user_id              <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),             <span class="hljs-comment">-- Subject del cliente (post-auth)</span>
+    consent_type         <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>)   <span class="hljs-keyword">NOT NULL</span>,  <span class="hljs-comment">-- ACCOUNT_ACCESS | DOMESTIC_PAYMENT | ...</span>
+    status               <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>)   <span class="hljs-keyword">NOT NULL</span>,  <span class="hljs-comment">-- AWAITING_AUTHORISATION | AUTHORISED | ...</span>
+    receipt              TEXT          <span class="hljs-keyword">NOT NULL</span>,  <span class="hljs-comment">-- JSON payload completo del consentimiento</span>
+    created_timestamp    DATETIME(<span class="hljs-number">6</span>)   <span class="hljs-keyword">NOT NULL</span>,
+    updated_timestamp    DATETIME(<span class="hljs-number">6</span>)   <span class="hljs-keyword">NOT NULL</span>,
+    expiration_timestamp DATETIME(<span class="hljs-number">6</span>),              <span class="hljs-comment">-- NULL = no expira</span>
+    consent_attributes   TEXT,                     <span class="hljs-comment">-- JSON metadata adicional (permissions, etc.)</span>
+    <span class="hljs-keyword">PRIMARY KEY</span> (consent_id),
+    INDEX idx_consent_client  (client_id),
+    INDEX idx_consent_user    (user_id),
+    INDEX idx_consent_status  (status),
+    INDEX idx_consent_type    (consent_type)
+) ENGINE<span class="hljs-operator">=</span>InnoDB <span class="hljs-keyword">DEFAULT</span> CHARSET<span class="hljs-operator">=</span>utf8mb4;
+</div></code></pre>
+<h3 id="92-base-de-datos-ob_events-flyway-v1">9.2 Base de datos ob_events (Flyway V1)</h3>
+<pre class="hljs"><code><div><span class="hljs-comment">-- Suscripciones webhook de TPPs para recibir eventos</span>
+<span class="hljs-keyword">CREATE TABLE</span> ob_event_subscription (
+    subscription_id   <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">36</span>)   <span class="hljs-keyword">NOT NULL</span>,
+    client_id         <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>)  <span class="hljs-keyword">NOT NULL</span>,  <span class="hljs-comment">-- TPP que se suscribe</span>
+    callback_url      <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">1024</span>),            <span class="hljs-comment">-- Webhook URL del TPP</span>
+    event_types       TEXT,                     <span class="hljs-comment">-- JSON array de tipos de eventos</span>
+    version           <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>),
+    created_timestamp DATETIME(<span class="hljs-number">6</span>)   <span class="hljs-keyword">NOT NULL</span>,
+    <span class="hljs-keyword">PRIMARY KEY</span> (subscription_id),
+    INDEX idx_sub_client (client_id)
+) ENGINE<span class="hljs-operator">=</span>InnoDB <span class="hljs-keyword">DEFAULT</span> CHARSET<span class="hljs-operator">=</span>utf8mb4;
+
+<span class="hljs-comment">-- Notificaciones pendientes de entrega (SET tokens RFC 8417)</span>
+<span class="hljs-keyword">CREATE TABLE</span> ob_event_notification (
+    notification_id   <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">36</span>)  <span class="hljs-keyword">NOT NULL</span>,
+    client_id         <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">NOT NULL</span>,
+    set_payload       TEXT         <span class="hljs-keyword">NOT NULL</span>,  <span class="hljs-comment">-- JWT Security Event Token</span>
+    status            <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>)  <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;OPEN&#x27;</span>,  <span class="hljs-comment">-- OPEN | DELIVERED</span>
+    created_timestamp DATETIME(<span class="hljs-number">6</span>)  <span class="hljs-keyword">NOT NULL</span>,
+    <span class="hljs-keyword">PRIMARY KEY</span> (notification_id),
+    INDEX idx_notif_client (client_id),
+    INDEX idx_notif_status (status)
+) ENGINE<span class="hljs-operator">=</span>InnoDB <span class="hljs-keyword">DEFAULT</span> CHARSET<span class="hljs-operator">=</span>utf8mb4;
+</div></code></pre>
+<h3 id="93-bases-de-datos-requeridas">9.3 Bases de datos requeridas</h3>
+<table>
+<thead>
+<tr>
+<th>Base de datos</th>
+<th>Propósito</th>
+<th>Tamaño estimado inicial</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ob_consent</code></td>
+<td>Consentimientos Open Banking</td>
+<td>10 GB</td>
+</tr>
+<tr>
+<td><code>ob_events</code></td>
+<td>Subscripciones y notificaciones</td>
+<td>5 GB</td>
+</tr>
+<tr>
+<td><code>keycloak</code></td>
+<td>Usuarios, clients, sesiones, tokens</td>
+<td>20 GB</td>
+</tr>
+<tr>
+<td><code>3scale_production</code></td>
+<td>APIs, plans, metrics, apps 3scale</td>
+<td>10 GB</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="10-políticas-de-api-3scale">10. Políticas de API (3scale)</h2>
+<p>Las políticas de 3scale son el mecanismo mediante el cual se implementan los requisitos de seguridad FAPI sin modificar el código de los microservicios backend. Funcionan como un pipeline de middleware en APIcast: cada petición entrante atraviesa las políticas en orden antes de llegar al servicio destino. Si cualquier política falla (token inválido, consentimiento revocado, rate limit excedido), la petición se rechaza con el código HTTP apropiado y se registra en el sistema de auditoría.</p>
+<h3 id="101-política-oidc--validación-de-tokens-keycloak">10.1 Política OIDC — Validación de Tokens Keycloak</h3>
+<p>Primera línea de defensa. APIcast verifica la firma del JWT usando las claves públicas de Keycloak (descargadas del endpoint JWKS), valida la expiración del token y extrae los claims relevantes (consent_id, azp, scope) que las políticas siguientes necesitarán.</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># APIcast Policy: OIDC</span>
+<span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">oidc</span>
+  <span class="hljs-attr">version:</span> <span class="hljs-string">builtin</span>
+  <span class="hljs-attr">configuration:</span>
+    <span class="hljs-attr">issuer:</span> <span class="hljs-string">&quot;https://auth.apps.cluster.example.com/realms/openbanking&quot;</span>
+    <span class="hljs-attr">client_id:</span> <span class="hljs-string">&quot;3scale-sync&quot;</span>
+    <span class="hljs-comment"># Keycloak JWKS endpoint para verificación de firma JWT</span>
+    <span class="hljs-attr">jwks_url:</span> <span class="hljs-string">&quot;https://auth.apps.cluster.example.com/realms/openbanking/protocol/openid-connect/certs&quot;</span>
+    <span class="hljs-comment"># Scopes requeridos por API</span>
+    <span class="hljs-attr">required_scopes:</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">accounts:read</span>        <span class="hljs-comment"># Account Information API</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">payments:initiate</span>    <span class="hljs-comment"># Payment Initiation API</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">funds-confirmation</span>   <span class="hljs-comment"># Funds Confirmation API</span>
+</div></code></pre>
+<h3 id="102-política-rate-limiting-por-tpp">10.2 Política Rate Limiting por TPP</h3>
+<p>Protege la plataforma contra el uso abusivo. El límite se aplica por <code>client_id</code> del TPP (claim <code>azp</code> del JWT), no por IP, lo que permite que un TPP con múltiples servidores comparta el mismo límite. Los límites son configurables por plan de 3scale, permitiendo diferentes cuotas para TPPs en sandbox, producción básica y producción premium.</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># APIcast Policy: Rate Limiting</span>
+<span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">rate_limit</span>
+  <span class="hljs-attr">version:</span> <span class="hljs-string">builtin</span>
+  <span class="hljs-attr">configuration:</span>
+    <span class="hljs-attr">limits:</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-attr">condition:</span> <span class="hljs-string">&quot;jwt.claim.azp&quot;</span>   <span class="hljs-comment"># client_id del TPP desde JWT</span>
+        <span class="hljs-attr">operations:</span>
+          <span class="hljs-bullet">-</span> <span class="hljs-attr">left:</span> <span class="hljs-string">&quot;200&quot;</span>              <span class="hljs-comment"># 200 req/min por TPP</span>
+            <span class="hljs-attr">left_type:</span> <span class="hljs-string">fixed</span>
+            <span class="hljs-attr">op:</span> <span class="hljs-string">&quot;&gt;=&quot;</span>
+            <span class="hljs-attr">right:</span> <span class="hljs-string">&quot;<span class="hljs-template-variable">{{http_requests_per_minute}}</span>&quot;</span>
+            <span class="hljs-attr">right_type:</span> <span class="hljs-string">liquid</span>
+        <span class="hljs-attr">actions:</span>
+          <span class="hljs-bullet">-</span> <span class="hljs-attr">type:</span> <span class="hljs-string">reject</span>
+            <span class="hljs-attr">status:</span> <span class="hljs-number">429</span>
+            <span class="hljs-attr">headers:</span>
+              <span class="hljs-attr">Retry-After:</span> <span class="hljs-string">&quot;60&quot;</span>
+              <span class="hljs-attr">Content-Type:</span> <span class="hljs-string">&quot;application/json&quot;</span>
+</div></code></pre>
+<h3 id="103-política-consent-enforcement-custom-camel-k">10.3 Política Consent Enforcement (Custom Camel K)</h3>
+<p>Esta política es la más crítica desde el punto de vista regulatorio. En cada petición de API (no solo al inicio de sesión), verifica que el consentimiento asociado al token sigue en estado <code>AUTHORISED</code> y no ha expirado. La validación se delega al <code>ob-consent-service</code> para garantizar que una revocación por parte del cliente tiene efecto inmediato. Se implementa como una ruta <strong>Apache Camel K</strong> que se ejecuta como contenedor sidecar de APIcast.</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// Ruta Camel K: ConsentEnforcementRoute.java</span>
+<span class="hljs-comment">// Valida que el access_token tiene un consentimiento AUTHORISED asociado</span>
+<span class="hljs-meta">@ApplicationScoped</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ConsentEnforcementRoute</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">RouteBuilder</span> {
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">configure</span><span class="hljs-params">()</span> {
+        <span class="hljs-comment">// Intercepta cada request entrante desde APIcast</span>
+        from(<span class="hljs-string">&quot;direct:consent-enforcement&quot;</span>)
+            .process(exchange -&gt; {
+                <span class="hljs-type">String</span> <span class="hljs-variable">consentId</span> <span class="hljs-operator">=</span> exchange.getIn()
+                    .getHeader(<span class="hljs-string">&quot;x-consent-id&quot;</span>, String.class);
+                <span class="hljs-type">String</span> <span class="hljs-variable">clientId</span>  <span class="hljs-operator">=</span> exchange.getIn()
+                    .getHeader(<span class="hljs-string">&quot;x-tpp-id&quot;</span>, String.class);
+
+                <span class="hljs-comment">// Llama al ob-consent-service para validar</span>
+                <span class="hljs-type">String</span> <span class="hljs-variable">url</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;http://ob-consent-svc.fs-ob:8081&quot;</span>
+                           + <span class="hljs-string">&quot;/api/fs/consent/v1.0/consents/&quot;</span>
+                           + consentId + <span class="hljs-string">&quot;/validate?clientId=&quot;</span> + clientId;
+
+                exchange.getIn().setHeader(Exchange.HTTP_URI, url);
+            })
+            .toD(<span class="hljs-string">&quot;http://ob-consent-svc.fs-ob:8081?bridgeEndpoint=true&quot;</span>)
+            .choice()
+                .<span class="hljs-keyword">when</span>(header(<span class="hljs-string">&quot;CamelHttpResponseCode&quot;</span>).isNotEqualTo(<span class="hljs-number">200</span>))
+                    .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(<span class="hljs-number">403</span>))
+                    .setBody(constant(<span class="hljs-string">&quot;{\&quot;error\&quot;:\&quot;consent_invalid\&quot;}&quot;</span>))
+                    .stop()
+            .end();
+    }
+}
+</div></code></pre>
+<h3 id="104-planes-de-api-3scale-tiers">10.4 Planes de API (3scale Tiers)</h3>
+<table>
+<thead>
+<tr>
+<th>Plan</th>
+<th>Límite llamadas</th>
+<th>Aplicación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sandbox</code></td>
+<td>100 req/día</td>
+<td>Desarrollo y testing TPPs</td>
+</tr>
+<tr>
+<td><code>basic</code></td>
+<td>10,000 req/día</td>
+<td>TPPs autorizados (sandbox regulatorio)</td>
+</tr>
+<tr>
+<td><code>production</code></td>
+<td>100,000 req/día</td>
+<td>TPPs con certificado regulatorio activo</td>
+</tr>
+<tr>
+<td><code>premium</code></td>
+<td>Sin límite</td>
+<td>Entidades financieras asociadas</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="11-consideraciones-de-seguridad-y-fapi">11. Consideraciones de Seguridad y FAPI</h2>
+<p>La seguridad en Open Banking no es una capa adicional — es una restricción de diseño que afecta cada componente de la arquitectura. El estándar FAPI (Financial-grade API) define requisitos de seguridad más estrictos que los de OAuth2/OIDC convencional, específicamente diseñados para mitigar los vectores de ataque más comunes en servicios bancarios: interceptación de tokens, replay attacks, phishing de redirects y acceso no autorizado mediante tokens robados.</p>
+<h3 id="111-perfiles-fapi-implementados-por-keycloak">11.1 Perfiles FAPI implementados por Keycloak</h3>
+<p>La ventaja competitiva de usar Keycloak para Open Banking es que estos perfiles están <strong>pre-configurados y validados</strong> por el equipo de Keycloak contra las especificaciones de la OpenID Foundation. No es necesario implementarlos manualmente — el administrador solo necesita activar la Client Policy correspondiente en el realm.</p>
+<p>Red Hat incluye en Keycloak 26 los siguientes perfiles listos para producción:</p>
+<pre class="hljs"><code><div>Global Client Profiles (pre-configurados):
+├── fapi-1-baseline
+│   ├── Executor: pkce-enforcer (S256 obligatorio)
+│   ├── Executor: secure-redirect-uris (sin wildcards, HTTPS)
+│   └── Executor: secure-session (duración limitada)
+│
+├── fapi-1-advanced
+│   ├── Executor: pkce-enforcer
+│   ├── Executor: mtls-enforcer (mTLS bound tokens)
+│   ├── Executor: request-object-enforcer (JAR firmado)
+│   └── Executor: par-enforcer (PAR obligatorio)
+│
+└── fapi-2-security-profile
+    ├── Executor: pkce-enforcer (S256)
+    ├── Executor: par-enforcer (PAR obligatorio)
+    ├── Executor: dpop-enforcer (DPoP tokens)
+    └── Executor: prohibit-implicit-grant (sin Implicit Flow)
+</div></code></pre>
+<h3 id="112-controles-de-seguridad-por-capa">11.2 Controles de seguridad por capa</h3>
+<p>Cada capa de la arquitectura implementa controles de seguridad independientes. Esta estrategia de <strong>defensa en profundidad</strong> garantiza que el compromiso de un componente no implica el compromiso de toda la plataforma. Por ejemplo, aunque un atacante lograra inyectar un token inválido, la validación de consentimiento en <code>ob-consent-service</code> lo rechazaría; aunque lograra un token válido para un consentimiento revocado, el estado en base de datos bloquearía la petición.</p>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Control</th>
+<th>Implementación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Perímetro</strong></td>
+<td>TLS 1.3 obligatorio</td>
+<td>OCP HAProxy + Routes</td>
+</tr>
+<tr>
+<td><strong>API Gateway</strong></td>
+<td>mTLS TPP ↔ 3scale</td>
+<td>3scale APIcast Policy</td>
+</tr>
+<tr>
+<td><strong>Identidad</strong></td>
+<td>FAPI 2 + DPoP</td>
+<td>Keycloak Client Policy</td>
+</tr>
+<tr>
+<td><strong>Consentimiento</strong></td>
+<td>Validación en cada request</td>
+<td>ob-consent-service validate</td>
+</tr>
+<tr>
+<td><strong>Inter-servicios</strong></td>
+<td>mTLS entre pods</td>
+<td>Red Hat Service Mesh STRICT</td>
+</tr>
+<tr>
+<td><strong>Datos en tránsito</strong></td>
+<td>TLS en MySQL</td>
+<td>MySQL SSL config</td>
+</tr>
+<tr>
+<td><strong>Datos en reposo</strong></td>
+<td>etcd cifrado OCP + MySQL TDE</td>
+<td>OCP config</td>
+</tr>
+<tr>
+<td><strong>Secretos</strong></td>
+<td>OCP Secrets + etcd cifrado</td>
+<td>OCP Secret API</td>
+</tr>
+<tr>
+<td><strong>Auditoría</strong></td>
+<td>Logs inmutables 5 años</td>
+<td>EFK + AMQ Streams audit topic</td>
+</tr>
+<tr>
+<td><strong>Escaneo</strong></td>
+<td>CVE continuo en imágenes</td>
+<td>Red Hat ACS (Advanced Cluster Security)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="113-configuración-sca-en-keycloak-authentication-flow">11.3 Configuración SCA en Keycloak (Authentication Flow)</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Browser Authentication Flow Open Banking con SCA</span>
+<span class="hljs-comment"># Equivalente al PSD2 RTS Strong Customer Authentication</span>
+<span class="hljs-attr">Authentication Flow:</span> <span class="hljs-string">browser-ob</span>
+<span class="hljs-string">│</span>
+<span class="hljs-string">├──</span> <span class="hljs-string">Cookie</span> <span class="hljs-string">(ALTERNATIVE)</span>         <span class="hljs-comment"># SSO session válida → skip</span>
+<span class="hljs-string">├──</span> <span class="hljs-string">Identity-First</span> <span class="hljs-string">Login</span> <span class="hljs-string">(REQUIRED)</span>
+<span class="hljs-string">│</span>   <span class="hljs-string">└──</span> <span class="hljs-string">Username</span> <span class="hljs-string">Form</span>
+<span class="hljs-string">└──</span> <span class="hljs-string">SCA</span> <span class="hljs-string">Sub-flow</span> <span class="hljs-string">(CONDITIONAL)</span>
+    <span class="hljs-string">├──</span> <span class="hljs-attr">Condition:</span> <span class="hljs-string">Credential</span> <span class="hljs-string">Configured</span>
+    <span class="hljs-string">└──</span> <span class="hljs-attr">Authenticators (ALTERNATIVE):</span>
+        <span class="hljs-string">├──</span> <span class="hljs-string">OTP</span> <span class="hljs-string">Form</span>                    <span class="hljs-comment"># Factor 2: TOTP (Google Auth / FreeOTP)</span>
+        <span class="hljs-string">└──</span> <span class="hljs-string">WebAuthn</span> <span class="hljs-string">Authenticator</span>      <span class="hljs-comment"># Factor 2: FIDO2 (Passkey / Yubikey)</span>
+
+<span class="hljs-comment"># Para pagos: flujo de SCA nivel 2 (LoA = 2)</span>
+<span class="hljs-attr">Client Policy FAPI 2:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">Condition:</span> <span class="hljs-string">Grant</span> <span class="hljs-string">Type</span> <span class="hljs-string">=</span> <span class="hljs-string">authorization_code</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">Condition:</span> <span class="hljs-string">Scope</span> <span class="hljs-string">=</span> <span class="hljs-string">payments:initiate</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">Action:</span> <span class="hljs-string">require-acr-values</span> <span class="hljs-string">=</span> [<span class="hljs-string">loa-2</span>]  <span class="hljs-comment"># Fuerza SCA</span>
+</div></code></pre>
+<hr>
+<h2 id="12-escalabilidad-y-alta-disponibilidad">12. Escalabilidad y Alta Disponibilidad</h2>
+<p>Los servicios Open Banking son servicios críticos de infraestructura financiera — su indisponibilidad tiene consecuencias regulatorias directas. La SFC y las normas PSD2 exigen disponibilidad mínima del 99.5% para los endpoints de APIs bancarias. La arquitectura propuesta supera estos requisitos mediante escalado horizontal automático, múltiples réplicas con distribución geográfica dentro del clúster y mecanismos de recuperación automática.</p>
+<p>El principio rector es: <strong>ningún componente tiene un único punto de fallo (SPOF)</strong>. Keycloak opera en cluster con cache Infinispan distribuida, MySQL en InnoDB Cluster de 3 nodos, Kafka con 3 brokers y factor de replicación 2, y los microservicios Quarkus con mínimo 2 réplicas distribuidas en diferentes nodos OCP.</p>
+<h3 id="121-sla-y-objetivos-de-disponibilidad">12.1 SLA y objetivos de disponibilidad</h3>
+<table>
+<thead>
+<tr>
+<th>Servicio</th>
+<th>SLA</th>
+<th>RPO</th>
+<th>RTO</th>
+<th>Réplicas mínimas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3scale APIcast (Gateway)</td>
+<td>99.9%</td>
+<td>15 min</td>
+<td>30 min</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Keycloak</td>
+<td>99.9%</td>
+<td>15 min</td>
+<td>30 min</td>
+<td>3</td>
+</tr>
+<tr>
+<td>ob-consent-service</td>
+<td>99.5%</td>
+<td>1 hora</td>
+<td>30 min</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ob-event-notifications</td>
+<td>99.5%</td>
+<td>1 hora</td>
+<td>1 hora</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ob-bank-backend</td>
+<td>99.5%</td>
+<td>N/A (stateless)</td>
+<td>5 min</td>
+<td>2</td>
+</tr>
+<tr>
+<td>MySQL InnoDB Cluster</td>
+<td>99.9%</td>
+<td>5 min</td>
+<td>15 min</td>
+<td>3</td>
+</tr>
+<tr>
+<td>AMQ Streams (Kafka)</td>
+<td>99.9%</td>
+<td>1 min</td>
+<td>5 min</td>
+<td>3 brokers</td>
+</tr>
+</tbody>
+</table>
+<h3 id="122-horizontal-pod-autoscaler-para-servicios-quarkus">12.2 Horizontal Pod Autoscaler para servicios Quarkus</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># HPA — ob-consent-service</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">autoscaling/v2</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">HorizontalPodAutoscaler</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">ob-consent-service-hpa</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">fs-ob</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">scaleTargetRef:</span>
+    <span class="hljs-attr">apiVersion:</span> <span class="hljs-string">apps/v1</span>
+    <span class="hljs-attr">kind:</span> <span class="hljs-string">Deployment</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">ob-consent-service</span>
+  <span class="hljs-attr">minReplicas:</span> <span class="hljs-number">2</span>
+  <span class="hljs-attr">maxReplicas:</span> <span class="hljs-number">8</span>
+  <span class="hljs-attr">metrics:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">type:</span> <span class="hljs-string">Resource</span>
+    <span class="hljs-attr">resource:</span>
+      <span class="hljs-attr">name:</span> <span class="hljs-string">cpu</span>
+      <span class="hljs-attr">target:</span>
+        <span class="hljs-attr">type:</span> <span class="hljs-string">Utilization</span>
+        <span class="hljs-attr">averageUtilization:</span> <span class="hljs-number">70</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">type:</span> <span class="hljs-string">Resource</span>
+    <span class="hljs-attr">resource:</span>
+      <span class="hljs-attr">name:</span> <span class="hljs-string">memory</span>
+      <span class="hljs-attr">target:</span>
+        <span class="hljs-attr">type:</span> <span class="hljs-string">Utilization</span>
+        <span class="hljs-attr">averageUtilization:</span> <span class="hljs-number">80</span>
+  <span class="hljs-attr">behavior:</span>
+    <span class="hljs-attr">scaleUp:</span>
+      <span class="hljs-attr">stabilizationWindowSeconds:</span> <span class="hljs-number">30</span>
+      <span class="hljs-attr">policies:</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-attr">type:</span> <span class="hljs-string">Pods</span>
+        <span class="hljs-attr">value:</span> <span class="hljs-number">2</span>
+        <span class="hljs-attr">periodSeconds:</span> <span class="hljs-number">60</span>
+    <span class="hljs-attr">scaleDown:</span>
+      <span class="hljs-attr">stabilizationWindowSeconds:</span> <span class="hljs-number">300</span>
+</div></code></pre>
+<h3 id="123-alta-disponibilidad-de-keycloak-infinispan-distributed-cache">12.3 Alta disponibilidad de Keycloak (Infinispan distributed cache)</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Keycloak CR — HA con cache distribuida</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">k8s.keycloak.org/v2alpha1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Keycloak</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">keycloak-openbanking</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">fs-keycloak</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">instances:</span> <span class="hljs-number">3</span>
+  <span class="hljs-attr">db:</span>
+    <span class="hljs-attr">vendor:</span> <span class="hljs-string">mysql</span>
+    <span class="hljs-attr">host:</span> <span class="hljs-string">mysql-svc.fs-database</span>
+    <span class="hljs-attr">database:</span> <span class="hljs-string">keycloak</span>
+    <span class="hljs-attr">usernameSecret:</span>
+      <span class="hljs-attr">name:</span> <span class="hljs-string">keycloak-db-secret</span>
+      <span class="hljs-attr">key:</span> <span class="hljs-string">username</span>
+    <span class="hljs-attr">passwordSecret:</span>
+      <span class="hljs-attr">name:</span> <span class="hljs-string">keycloak-db-secret</span>
+      <span class="hljs-attr">key:</span> <span class="hljs-string">password</span>
+  <span class="hljs-attr">http:</span>
+    <span class="hljs-attr">tlsSecret:</span> <span class="hljs-string">keycloak-tls-secret</span>
+  <span class="hljs-attr">hostname:</span>
+    <span class="hljs-attr">hostname:</span> <span class="hljs-string">auth.apps.cluster.example.com</span>
+  <span class="hljs-attr">cache:</span>
+    <span class="hljs-comment"># Infinispan distribuido entre réplicas (JGroups KUBE_PING)</span>
+    <span class="hljs-attr">configMapFile:</span>
+      <span class="hljs-attr">name:</span> <span class="hljs-string">keycloak-cache-config</span>
+      <span class="hljs-attr">key:</span> <span class="hljs-string">cache-ispn.xml</span>
+  <span class="hljs-attr">resources:</span>
+    <span class="hljs-attr">requests:</span>
+      <span class="hljs-attr">memory:</span> <span class="hljs-string">&quot;512Mi&quot;</span>
+      <span class="hljs-attr">cpu:</span> <span class="hljs-string">&quot;500m&quot;</span>
+    <span class="hljs-attr">limits:</span>
+      <span class="hljs-attr">memory:</span> <span class="hljs-string">&quot;1Gi&quot;</span>
+      <span class="hljs-attr">cpu:</span> <span class="hljs-string">&quot;2&quot;</span>
+</div></code></pre>
+<h3 id="124-estrategia-de-despliegue-gitops-argocd">12.4 Estrategia de despliegue GitOps (ArgoCD)</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Application ArgoCD — Open Banking Services</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">argoproj.io/v1alpha1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Application</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">open-banking-rh</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">openshift-gitops</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">project:</span> <span class="hljs-string">financial-services</span>
+  <span class="hljs-attr">source:</span>
+    <span class="hljs-attr">repoURL:</span> <span class="hljs-string">https://github.com/garzontaleroj/financial-services-accelerator-local</span>
+    <span class="hljs-attr">targetRevision:</span> <span class="hljs-string">main</span>
+    <span class="hljs-attr">path:</span> <span class="hljs-string">open-banking-rh/deploy/overlays/production</span>
+  <span class="hljs-attr">destination:</span>
+    <span class="hljs-attr">server:</span> <span class="hljs-string">https://kubernetes.default.svc</span>
+    <span class="hljs-attr">namespace:</span> <span class="hljs-string">fs-ob</span>
+  <span class="hljs-attr">syncPolicy:</span>
+    <span class="hljs-attr">automated:</span>
+      <span class="hljs-attr">prune:</span> <span class="hljs-literal">true</span>
+      <span class="hljs-attr">selfHeal:</span> <span class="hljs-literal">true</span>
+    <span class="hljs-attr">syncOptions:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-string">CreateNamespace=true</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-string">ApplyOutOfSyncOnly=true</span>
+</div></code></pre>
+<hr>
+<h2 id="13-manifiestos-ocp-de-referencia">13. Manifiestos OCP de Referencia</h2>
+<p>Esta sección proporciona los manifiestos Kubernetes/OCP de referencia para los componentes principales de la solución. Estos manifiestos están diseñados para entornos de producción: incluyen configuración de seguridad (<code>securityContext</code> con principio de mínimo privilegio), health checks correctamente configurados para Quarkus, inyección de secretos desde OCP Secrets (no variables hardcodeadas) e integración con el Service Mesh de Istio.</p>
+<p>En una implementación real, estos manifiestos se gestionarían con <strong>Kustomize</strong> (overlays por entorno: dev/staging/prod) y se desplegarían mediante <strong>ArgoCD</strong> en un flujo GitOps donde cualquier cambio en el repositorio Git se refleja automáticamente en el clúster.</p>
+<h3 id="131-deployment--ob-consent-service">13.1 Deployment — ob-consent-service</h3>
+<p>Este Deployment define las especificaciones del pod para <code>ob-consent-service</code>. Puntos clave: la anotación <code>sidecar.istio.io/inject: true</code> activa el sidecar de Istio para mTLS automático; el <code>securityContext</code> elimina todos los privilegios del proceso; los health checks usan el endpoint <code>/q/health</code> nativo de Quarkus SmallRye Health; las credenciales de base de datos se inyectan desde un OCP Secret en lugar de estar en el manifiesto.</p>
+<pre class="hljs"><code><div><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">apps/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Deployment</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">ob-consent-service</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">fs-ob</span>
+  <span class="hljs-attr">labels:</span>
+    <span class="hljs-attr">app:</span> <span class="hljs-string">ob-consent-service</span>
+    <span class="hljs-attr">version:</span> <span class="hljs-string">&quot;1.0.0&quot;</span>
+    <span class="hljs-attr">app.kubernetes.io/part-of:</span> <span class="hljs-string">open-banking-rh</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">replicas:</span> <span class="hljs-number">2</span>
+  <span class="hljs-attr">selector:</span>
+    <span class="hljs-attr">matchLabels:</span>
+      <span class="hljs-attr">app:</span> <span class="hljs-string">ob-consent-service</span>
+  <span class="hljs-attr">template:</span>
+    <span class="hljs-attr">metadata:</span>
+      <span class="hljs-attr">labels:</span>
+        <span class="hljs-attr">app:</span> <span class="hljs-string">ob-consent-service</span>
+        <span class="hljs-attr">version:</span> <span class="hljs-string">&quot;1.0.0&quot;</span>
+      <span class="hljs-attr">annotations:</span>
+        <span class="hljs-attr">sidecar.istio.io/inject:</span> <span class="hljs-string">&quot;true&quot;</span>     <span class="hljs-comment"># Service Mesh mTLS</span>
+    <span class="hljs-attr">spec:</span>
+      <span class="hljs-attr">serviceAccountName:</span> <span class="hljs-string">ob-consent-sa</span>
+      <span class="hljs-attr">containers:</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">ob-consent-service</span>
+        <span class="hljs-attr">image:</span> <span class="hljs-string">quay.io/openbanking-rh/ob-consent-service:1.0.0</span>
+        <span class="hljs-attr">imagePullPolicy:</span> <span class="hljs-string">Always</span>
+        <span class="hljs-attr">ports:</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">containerPort:</span> <span class="hljs-number">8081</span>
+          <span class="hljs-attr">name:</span> <span class="hljs-string">http</span>
+        <span class="hljs-attr">env:</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">QUARKUS_DATASOURCE_JDBC_URL</span>
+          <span class="hljs-attr">value:</span> <span class="hljs-string">&quot;jdbc:mysql://mysql-svc.fs-database:3306/ob_consent?useSSL=true&quot;</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">QUARKUS_DATASOURCE_USERNAME</span>
+          <span class="hljs-attr">valueFrom:</span>
+            <span class="hljs-attr">secretKeyRef:</span>
+              <span class="hljs-attr">name:</span> <span class="hljs-string">consent-db-secret</span>
+              <span class="hljs-attr">key:</span> <span class="hljs-string">username</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">QUARKUS_DATASOURCE_PASSWORD</span>
+          <span class="hljs-attr">valueFrom:</span>
+            <span class="hljs-attr">secretKeyRef:</span>
+              <span class="hljs-attr">name:</span> <span class="hljs-string">consent-db-secret</span>
+              <span class="hljs-attr">key:</span> <span class="hljs-string">password</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">QUARKUS_OIDC_AUTH_SERVER_URL</span>
+          <span class="hljs-attr">value:</span> <span class="hljs-string">&quot;https://auth.apps.cluster.example.com/realms/openbanking&quot;</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">KAFKA_BOOTSTRAP_SERVERS</span>
+          <span class="hljs-attr">value:</span> <span class="hljs-string">&quot;ob-kafka-kafka-bootstrap.fs-messaging:9092&quot;</span>
+        <span class="hljs-attr">resources:</span>
+          <span class="hljs-attr">requests:</span>
+            <span class="hljs-attr">memory:</span> <span class="hljs-string">&quot;64Mi&quot;</span>
+            <span class="hljs-attr">cpu:</span> <span class="hljs-string">&quot;100m&quot;</span>
+          <span class="hljs-attr">limits:</span>
+            <span class="hljs-attr">memory:</span> <span class="hljs-string">&quot;256Mi&quot;</span>
+            <span class="hljs-attr">cpu:</span> <span class="hljs-string">&quot;500m&quot;</span>
+        <span class="hljs-attr">readinessProbe:</span>
+          <span class="hljs-attr">httpGet:</span>
+            <span class="hljs-attr">path:</span> <span class="hljs-string">/q/health/ready</span>
+            <span class="hljs-attr">port:</span> <span class="hljs-number">8081</span>
+          <span class="hljs-attr">initialDelaySeconds:</span> <span class="hljs-number">15</span>
+          <span class="hljs-attr">periodSeconds:</span> <span class="hljs-number">10</span>
+        <span class="hljs-attr">livenessProbe:</span>
+          <span class="hljs-attr">httpGet:</span>
+            <span class="hljs-attr">path:</span> <span class="hljs-string">/q/health/live</span>
+            <span class="hljs-attr">port:</span> <span class="hljs-number">8081</span>
+          <span class="hljs-attr">initialDelaySeconds:</span> <span class="hljs-number">30</span>
+          <span class="hljs-attr">periodSeconds:</span> <span class="hljs-number">20</span>
+        <span class="hljs-attr">securityContext:</span>
+          <span class="hljs-attr">runAsNonRoot:</span> <span class="hljs-literal">true</span>
+          <span class="hljs-attr">readOnlyRootFilesystem:</span> <span class="hljs-literal">true</span>
+          <span class="hljs-attr">allowPrivilegeEscalation:</span> <span class="hljs-literal">false</span>
+          <span class="hljs-attr">capabilities:</span>
+            <span class="hljs-attr">drop:</span> [<span class="hljs-string">&quot;ALL&quot;</span>]
+</div></code></pre>
+<h3 id="132-service--route--ob-consent-service">13.2 Service + Route — ob-consent-service</h3>
+<p>El Service expone el pod internamente en el clúster (ClusterIP). La Route tiene una restricción de IP whitelist que limita el acceso a la red interna del clúster (<code>10.0.0.0/8</code>), garantizando que ningún TPP externo puede acceder directamente al <code>ob-consent-service</code> — deben pasar obligatoriamente por 3scale APIcast, donde se aplican todas las políticas de seguridad.</p>
+<pre class="hljs"><code><div><span class="hljs-meta">---</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Service</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">ob-consent-svc</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">fs-ob</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">selector:</span>
+    <span class="hljs-attr">app:</span> <span class="hljs-string">ob-consent-service</span>
+  <span class="hljs-attr">ports:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">port:</span> <span class="hljs-number">8081</span>
+    <span class="hljs-attr">targetPort:</span> <span class="hljs-number">8081</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">http</span>
+<span class="hljs-meta">---</span>
+<span class="hljs-comment"># Route expuesta solo internamente (sin acceso desde internet)</span>
+<span class="hljs-comment"># El acceso externo es SOLO a través de 3scale APIcast</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">route.openshift.io/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Route</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">ob-consent-internal</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">fs-ob</span>
+  <span class="hljs-attr">annotations:</span>
+    <span class="hljs-attr">haproxy.router.openshift.io/ip_whitelist:</span> <span class="hljs-string">&quot;10.0.0.0/8&quot;</span>  <span class="hljs-comment"># Solo red interna</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">host:</span> <span class="hljs-string">consent-internal.apps.cluster.example.com</span>
+  <span class="hljs-attr">to:</span>
+    <span class="hljs-attr">kind:</span> <span class="hljs-string">Service</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">ob-consent-svc</span>
+  <span class="hljs-attr">tls:</span>
+    <span class="hljs-attr">termination:</span> <span class="hljs-string">edge</span>
+    <span class="hljs-attr">insecureEdgeTerminationPolicy:</span> <span class="hljs-string">Redirect</span>
+</div></code></pre>
+<h3 id="133-networkpolicy--aislamiento-entre-namespaces">13.3 NetworkPolicy — aislamiento entre namespaces</h3>
+<p>Las NetworkPolicies implementan el modelo de <strong>zero-trust networking</strong> entre namespaces de OCP. Por defecto, todos los pods del namespace <code>fs-ob</code> rechazan tráfico entrante de cualquier origen. Solo se permite tráfico desde los namespaces <code>fs-3scale</code> (APIcast), <code>fs-keycloak</code> (auth flows) y <code>fs-service-mesh</code> (Istio sidecars). Este control es la salvaguarda final que garantiza que incluso si un atacante comprometiera un pod en otro namespace, no podría acceder a los servicios Open Banking directamente.</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Solo 3scale y Keycloak pueden llamar a los servicios Quarkus</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">networking.k8s.io/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">NetworkPolicy</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">allow-apicast-and-keycloak</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">fs-ob</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">podSelector:</span>
+    <span class="hljs-attr">matchLabels:</span>
+      <span class="hljs-attr">app.kubernetes.io/part-of:</span> <span class="hljs-string">open-banking-rh</span>
+  <span class="hljs-attr">policyTypes:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-string">Ingress</span>
+  <span class="hljs-attr">ingress:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">from:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">namespaceSelector:</span>
+        <span class="hljs-attr">matchLabels:</span>
+          <span class="hljs-attr">name:</span> <span class="hljs-string">fs-3scale</span>      <span class="hljs-comment"># 3scale APIcast</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">namespaceSelector:</span>
+        <span class="hljs-attr">matchLabels:</span>
+          <span class="hljs-attr">name:</span> <span class="hljs-string">fs-keycloak</span>    <span class="hljs-comment"># Keycloak auth flows</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">namespaceSelector:</span>
+        <span class="hljs-attr">matchLabels:</span>
+          <span class="hljs-attr">name:</span> <span class="hljs-string">fs-service-mesh</span>  <span class="hljs-comment"># Istio sidecar</span>
+    <span class="hljs-attr">ports:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">port:</span> <span class="hljs-number">8081</span>   <span class="hljs-comment"># ob-consent-service</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">port:</span> <span class="hljs-number">8082</span>   <span class="hljs-comment"># ob-event-notifications</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">port:</span> <span class="hljs-number">8083</span>   <span class="hljs-comment"># ob-bank-backend</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-attr">port:</span> <span class="hljs-number">80</span>     <span class="hljs-comment"># self-care-portal</span>
+</div></code></pre>
+<h3 id="134-kafkatopic--ob-consent-events">13.4 KafkaTopic — ob-consent-events</h3>
+<p>Este manifiesto de AMQ Streams (Strimzi Operator) define el topic Kafka para eventos de consentimiento. La configuración de <code>min.insync.replicas: 2</code> garantiza que un mensaje solo se confirma como escrito cuando al menos 2 de los 3 brokers lo han persistido, lo que protege contra la pérdida de eventos en caso de fallo de un broker. La retención de 7 días permite reintentos de procesamiento si <code>ob-event-notifications</code> tiene una interrupción temporal.</p>
+<pre class="hljs"><code><div><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">kafka.strimzi.io/v1beta2</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">KafkaTopic</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">ob-consent-events</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">fs-messaging</span>
+  <span class="hljs-attr">labels:</span>
+    <span class="hljs-attr">strimzi.io/cluster:</span> <span class="hljs-string">ob-kafka</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">partitions:</span> <span class="hljs-number">3</span>
+  <span class="hljs-attr">replicas:</span> <span class="hljs-number">2</span>
+  <span class="hljs-attr">config:</span>
+    <span class="hljs-attr">retention.ms:</span> <span class="hljs-number">604800000</span>        <span class="hljs-comment"># 7 días</span>
+    <span class="hljs-attr">segment.bytes:</span> <span class="hljs-number">1073741824</span>      <span class="hljs-comment"># 1 GB por segmento</span>
+    <span class="hljs-attr">cleanup.policy:</span> <span class="hljs-string">delete</span>
+    <span class="hljs-attr">min.insync.replicas:</span> <span class="hljs-string">&quot;2&quot;</span>       <span class="hljs-comment"># Mínimo 2 réplicas in-sync</span>
+</div></code></pre>
+<hr>
+<h2 id="referencias-y-recursos-adicionales">Referencias y recursos adicionales</h2>
+<h3 id="red-hat--documentación-oficial-open-banking--fapi">Red Hat — Documentación oficial Open Banking / FAPI</h3>
+<table>
+<thead>
+<tr>
+<th>Recurso</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Keycloak FAPI Support</td>
+<td>https://www.keycloak.org/docs/latest/securing_apps/index.html#_fapi-support</td>
+</tr>
+<tr>
+<td>3scale API Management</td>
+<td>https://access.redhat.com/documentation/en-us/red_hat_3scale_api_management</td>
+</tr>
+<tr>
+<td>Red Hat Service Mesh</td>
+<td>https://docs.openshift.com/container-platform/latest/service_mesh/v2x/ossm-about.html</td>
+</tr>
+<tr>
+<td>Quarkus OIDC</td>
+<td>https://quarkus.io/guides/security-oidc-code-flow-authentication</td>
+</tr>
+<tr>
+<td>AMQ Streams (Kafka)</td>
+<td>https://access.redhat.com/documentation/en-us/red_hat_amq_streams</td>
+</tr>
+<tr>
+<td>Loki on OCP</td>
+<td>https://docs.openshift.com/container-platform/latest/observability/logging/log_storage/installing-log-storage.html</td>
+</tr>
+<tr>
+<td>Jaeger Distributed Tracing</td>
+<td>https://docs.openshift.com/container-platform/latest/observability/distr_tracing/distr_tracing_jaeger/distr-tracing-jaeger-installing.html</td>
+</tr>
+<tr>
+<td>Red Hat Financial Services</td>
+<td>https://www.redhat.com/en/solutions/financial-services</td>
+</tr>
+</tbody>
+</table>
+<h3 id="estándares-open-banking-implementados">Estándares Open Banking implementados</h3>
+<table>
+<thead>
+<tr>
+<th>Estándar</th>
+<th>Organismo</th>
+<th>Implementación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Open Banking UK v4.0</td>
+<td>OBIE</td>
+<td>ob-bank-backend (API contracts)</td>
+</tr>
+<tr>
+<td>FAPI 1.0 Advanced</td>
+<td>OpenID Foundation</td>
+<td>Keycloak Client Policies</td>
+</tr>
+<tr>
+<td>FAPI 2.0 Security Profile</td>
+<td>OpenID Foundation</td>
+<td>Keycloak Client Policies</td>
+</tr>
+<tr>
+<td>RFC 7591/7592 (DCR)</td>
+<td>IETF</td>
+<td>Keycloak nativo</td>
+</tr>
+<tr>
+<td>RFC 9126 (PAR)</td>
+<td>IETF</td>
+<td>Keycloak nativo</td>
+</tr>
+<tr>
+<td>RFC 9449 (DPoP)</td>
+<td>IETF</td>
+<td>Keycloak (feature dpop)</td>
+</tr>
+<tr>
+<td>RFC 8417 (SET)</td>
+<td>IETF</td>
+<td>ob-event-notifications</td>
+</tr>
+<tr>
+<td>PSD2 RTS (SCA)</td>
+<td>EBA</td>
+<td>Keycloak Auth Flows WebAuthn</td>
+</tr>
+<tr>
+<td>ISO 20022</td>
+<td>ISO</td>
+<td>Payload de pagos (ob-bank-backend)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><em>Documento generado el 2026-06-25. Próxima revisión: 2026-07-27.</em><br>
+<em>Contacto técnico: Juan Pablo Garzon — Ticxar / Red Hat Financial Services LAM.</em></p>
+
+</body>
+</html>
