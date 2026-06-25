@@ -432,25 +432,25 @@ sequenceDiagram
     participant BE as ob-bank-backend
     participant KAFKA as AMQ Streams
 
-    TPP->>GW: 1. GET /accounts\nAuthorization: Bearer <token>\n+ TLS client cert (mTLS)
+    TPP->>GW: 1. GET /accounts - Authorization Bearer token + mTLS cert
 
-    GW->>GW: 2. Política mTLS: valida certificado TLS del TPP
-    GW->>GW: 3. Rate limiting por TPP (3scale policy)
+    GW->>GW: 2. Valida certificado mTLS del TPP
+    GW->>GW: 3. Rate limiting por TPP - 3scale policy
 
-    GW->>KC: 4. POST /token/introspect (token + client_id)
-    KC-->>GW: 5. {active: true, consent_id: "xxx", scope: "accounts", sub: "user-id"}
+    GW->>KC: 4. POST /token/introspect - token + client_id
+    KC-->>GW: 5. active=true, consent_id, scope=accounts, sub=user-id
 
-    GW->>CONSENT: 6. GET /api/fs/consent/v1.0/consents/{consent_id}/validate\n{clientId: "tpp-id"}
-    CONSENT-->>GW: 7. {valid: true} — consentimiento AUTHORISED y vigente
+    GW->>CONSENT: 6. GET /consents/CONSENT_ID/validate?clientId=TPP_ID
+    CONSENT-->>GW: 7. valid=true - consentimiento AUTHORISED y vigente
 
-    GW->>GW: 8. Enriquece request: x-consent-id, x-tpp-id, x-user-id headers
+    GW->>GW: 8. Agrega headers: x-consent-id, x-tpp-id, x-user-id
 
-    GW->>BE: 9. GET /api/fs/backend/v1.0/accounts\n(headers enriquecidos)
-    BE-->>GW: 10. 200 OK {Data: {Account: [...]}}
+    GW->>BE: 9. GET /api/fs/backend/v1.0/accounts - headers enriquecidos
+    BE-->>GW: 10. 200 OK - lista de cuentas
 
-    GW-->>TPP: 11. 200 OK datos de cuentas
+    GW-->>TPP: 11. 200 OK datos de cuentas autorizados
 
-    GW->>KAFKA: 12. Publica evento auditoria (async)\n{action: "GET_ACCOUNTS", consentId, tppId, timestamp}
+    GW->>KAFKA: 12. Evento auditoria async - GET_ACCOUNTS, consentId, tppId
 ```
 
 ### 5.4 Flujo de Iniciación de Pago (Domestic Payment)
@@ -467,25 +467,25 @@ sequenceDiagram
     participant KAFKA as AMQ Streams
     participant EVENTS as ob-event-notifications
 
-    TPP->>GW: 1. POST /payments/domestic-payments\n{Data: {InstructedAmount, CreditorAccount, ...}}
-    GW->>KC: 2. Valida token (consent tipo DOMESTIC_PAYMENT)
+    TPP->>GW: 1. POST /payments/domestic-payments - InstructedAmount, CreditorAccount
+    GW->>KC: 2. Valida token - consent tipo DOMESTIC_PAYMENT
     GW->>CONSENT: 3. Valida consentimiento de pago
     CONSENT-->>GW: 4. Consentimiento AUTHORISED
 
-    Note over KC,TPP: SCA requerida para confirmación de pago específico
-    GW->>KC: 5. Solicita confirmación SCA del pago
-    KC->>TPP: 6. Redirige para SCA del pago (kc_action=UPDATE_PASSWORD)
-    TPP->>KC: 7. Usuario confirma pago (WebAuthn/OTP)
-    KC-->>GW: 8. Token de pago confirmado (scope: payments:initiate)
+    Note over KC,TPP: SCA requerida para confirmacion de pago especifico
+    GW->>KC: 5. Solicita confirmacion SCA del pago
+    KC->>TPP: 6. Redirige para SCA - kc_action con nivel loa-2
+    TPP->>KC: 7. Usuario confirma pago con WebAuthn u OTP
+    KC-->>GW: 8. Token de pago confirmado - scope payments:initiate
 
     GW->>BE: 9. POST /api/fs/backend/v1.0/payments/domestic-payments
-    BE-->>GW: 10. 201 Created {paymentId, status: AcceptedSettlementInProcess}
+    BE-->>GW: 10. 201 Created - paymentId, status AcceptedSettlementInProcess
     GW-->>TPP: 11. 201 Created con payment_id
 
-    BE->>KAFKA: 12. Publica "PaymentInitiated" (async)
-    KAFKA->>EVENTS: 13. Consumer procesa evento
-    EVENTS->>EVENTS: 14. Genera SET token (RFC 8417)
-    EVENTS->>TPP: 15. POST callbackUrl (webhook TPP)\n{SET: "eyJ..."}
+    BE->>KAFKA: 12. Publica PaymentInitiated de forma asincrona
+    KAFKA->>EVENTS: 13. Consumer procesa evento de pago
+    EVENTS->>EVENTS: 14. Genera SET token RFC 8417
+    EVENTS->>TPP: 15. POST callbackUrl del TPP con SET token
 ```
 
 ---
@@ -495,34 +495,32 @@ sequenceDiagram
 Red Hat 3scale API Management es el corazón de la capa de gobierno de APIs. Este diagrama muestra la arquitectura interna de 3scale desplegada en OCP y su relación con las seis APIs Open Banking publicadas. Cada API tiene asociado un conjunto de políticas que se aplican secuencialmente en el pipeline de APIcast: primero la validación mTLS del certificado del TPP, luego la validación del token OIDC contra Keycloak, después la política de consent enforcement que consulta al `ob-consent-service`, y finalmente el rate limiting que previene el abuso de la plataforma.
 
 ```mermaid
-graph LR
-    subgraph "3scale API Management — namespace fs-3scale"
-        direction TB
-        APICAST[APIcast\nOCP Route: api.apps.cluster\nPolicies: OIDC, Rate Limit, mTLS]
-        BACKEND[3scale Backend\nRedis: rate counters\nMySQL: configuration]
-        SYSTEM[3scale System\nAdmin Portal\nDev Portal]
-        ZYNC2[Zync\nKeycloak client sync]
-
-        APICAST -->|reports usage| BACKEND
+flowchart LR
+    subgraph S1[3scale API Management]
+        APICAST[APIcast Gateway]
+        BACKEND[3scale Backend]
+        SYSTEM[System - Admin Portal]
+        ZYNC2[Zync - Keycloak sync]
+        APICAST -->|usage reports| BACKEND
         SYSTEM -->|configures| APICAST
         ZYNC2 -->|sync clients| SYSTEM
     end
 
-    subgraph "APIs Open Banking Publicadas"
-        API_ACC[Account Information API\nv4.0 — /accounts/*]
-        API_PAY[Payment Initiation API\nv4.0 — /payments/*]
-        API_FUNDS[Funds Confirmation API\nv4.0 — /funds-confirmations]
-        API_VRP[VRP API\nv4.0 — /domestic-vrps]
-        API_CONSENT[Consent Management API\nv1.0 — /consents]
-        API_EVENTS[Event Notifications API\nv1.0 — /events]
+    subgraph S2[APIs Open Banking]
+        API_ACC[Account Info v4.0]
+        API_PAY[Payment Initiation v4.0]
+        API_FUNDS[Funds Confirmation v4.0]
+        API_VRP[VRP v4.0]
+        API_CONSENT[Consent Mgmt v1.0]
+        API_EVENTS[Event Notifications v1.0]
     end
 
-    subgraph "Políticas APIcast"
-        POL_OIDC[Policy: OIDC\nToken validation via Keycloak]
-        POL_RATE[Policy: Rate Limiting\n500 RPM por TPP]
-        POL_MTLS[Policy: mTLS\nCertificado TLS cliente TPP]
-        POL_CONSENT[Policy: Custom\nConsent enforcement]
-        POL_HEADER[Policy: Header Mod\nx-tpp-id, x-consent-id]
+    subgraph S3[Politicas APIcast]
+        POL_OIDC[OIDC - Token Keycloak]
+        POL_RATE[Rate Limit - 500 RPM por TPP]
+        POL_MTLS[mTLS - Cert TPP]
+        POL_CONSENT[Consent Enforcement]
+        POL_HEADER[Header Enrichment]
     end
 
     APICAST --> API_ACC
@@ -548,28 +546,17 @@ Este diagrama detalla la relación entre Keycloak y los microservicios Quarkus d
 El `ob-consent-service` actúa también como componente de validación que 3scale consulta en cada petición de API. Esta arquitectura "validate-on-every-call" garantiza que si un cliente revoca un consentimiento, el bloqueo es efectivo en la siguiente petición — no al expirar el token.
 
 ```mermaid
-graph TB
-    subgraph "Keycloak — namespace fs-keycloak"
-        direction TB
-        KC_REALM[Realm: openbanking]
-        
-        subgraph "Clients registrados"
-            C_3SCALE[3scale-sync\nService Account]
-            C_PORTAL[self-care-portal\nPublic OIDC Client]
-            C_TPPs[TPPs dinámicos\nDCR registrados]
-        end
-        
-        subgraph "Authentication Flows"
-            AF_BROWSER[browser-ob\nCookie → ID-First → Password → SCA]
-            AF_DCR[first-broker-login\nOnboarding TPP]
-            AF_SCA[sca-payment\nPassword + WebAuthn (FAPI 2)]
-        end
-        
-        subgraph "Client Policies FAPI"
-            CP_FAPI2[Policy: fapi-2-open-banking\nCondition: client-roles=openbanking-tpp\nProfile: fapi-2-security-profile]
-            CP_OAUTH21[Policy: oauth-2-1\nCondition: any-client\nProfile: oauth-2-1]
-        end
-        
+flowchart TB
+    subgraph KC[Keycloak - namespace fs-keycloak]
+        KC_REALM[Realm openbanking]
+        C_3SCALE[Client: 3scale-sync]
+        C_PORTAL[Client: self-care-portal]
+        C_TPPs[Clients: TPPs via DCR]
+        AF_BROWSER[Flow: browser-ob]
+        AF_DCR[Flow: first-broker-login]
+        AF_SCA[Flow: sca-payment FAPI2]
+        CP_FAPI2[Policy: fapi-2-open-banking]
+        CP_OAUTH21[Policy: oauth-2-1]
         KC_REALM --> C_3SCALE
         KC_REALM --> C_PORTAL
         KC_REALM --> C_TPPs
@@ -580,16 +567,14 @@ graph TB
         KC_REALM --> CP_OAUTH21
     end
 
-    subgraph "ob-consent-service — namespace fs-ob"
-        direction TB
-        CS_API[ConsentResource\nPOST/GET/DELETE /consents]
-        CS_ADM[ConsentAdminResource\nGET /admin/consents]
-        CS_VAL[GET /consents/{id}/validate\nusado por 3scale policy]
-        CS_AUTH[PUT /consents/{id}/authorise\nusado por Keycloak flow]
-        CS_SVC[ConsentService\nBusiness logic CDI]
-        CS_ENT[ConsentEntity\nPanache — MySQL]
-        CS_EVT[ConsentEventPublisher\nKafka emitter]
-
+    subgraph CS[ob-consent-service - namespace fs-ob]
+        CS_API[ConsentResource - POST/GET/DELETE]
+        CS_ADM[ConsentAdminResource - GET admin]
+        CS_VAL[GET validate - usado por 3scale]
+        CS_AUTH[PUT authorise - usado por Keycloak]
+        CS_SVC[ConsentService - CDI]
+        CS_ENT[ConsentEntity - Panache MySQL]
+        CS_EVT[ConsentEventPublisher - Kafka]
         CS_API --> CS_SVC
         CS_ADM --> CS_SVC
         CS_VAL --> CS_SVC
@@ -598,18 +583,17 @@ graph TB
         CS_SVC --> CS_EVT
     end
 
-    subgraph "ob-event-notifications — namespace fs-ob"
-        ES_API[EventSubscriptionResource\nCRUD /subscription]
-        ES_CONS[ConsentEventConsumer\nKafka listener]
-        ES_ENT[EventNotificationEntity\nPanache — MySQL]
-
+    subgraph EV[ob-event-notifications - namespace fs-ob]
+        ES_API[EventSubscriptionResource]
+        ES_CONS[ConsentEventConsumer - Kafka]
+        ES_ENT[EventNotificationEntity - MySQL]
         ES_CONS --> ES_ENT
         ES_API --> ES_ENT
     end
 
-    KC_REALM -->|introspection| CS_VAL
+    KC_REALM -->|token introspection| CS_VAL
     KC_REALM -->|authorise consent| CS_AUTH
-    CS_EVT -->|ob-consent-events| ES_CONS
+    CS_EVT -->|ob-consent-events topic| ES_CONS
 ```
 
 ---
@@ -693,31 +677,31 @@ Red Hat OpenShift Container Platform 4.14
 **Diagrama de comunicación entre namespaces:**
 
 ```mermaid
-graph LR
-    Internet["TPP / PSU\nInternet"] -->|HTTPS TLS| Routes["OCP Routes\n(HAProxy + TLS)"]
-    Routes --> NS3scale["fs-3scale\nAPIcast"]
-    Routes --> NSKeycloak["fs-keycloak\nKeycloak"]
-    Routes --> NSPortal["fs-ob\nSelf-Care Portal"]
+flowchart LR
+    Internet[TPP y PSU - Internet] -->|HTTPS TLS| Routes[OCP Routes HAProxy]
+    Routes --> NS3scale[fs-3scale APIcast]
+    Routes --> NSKeycloak[fs-keycloak Keycloak]
+    Routes --> NSPortal[fs-ob Self-Care Portal]
 
-    NS3scale -->|introspection| NSKeycloak
-    NS3scale -->|consent validate| NSOB["fs-ob\nConsent Service"]
-    NS3scale -->|API calls| NSBackend["fs-ob\nBank Backend"]
+    NS3scale -->|token introspection| NSKeycloak
+    NS3scale -->|consent validate| NSOB[fs-ob Consent Service]
+    NS3scale -->|API calls| NSBackend[fs-ob Bank Backend]
 
     NSPortal -->|consent API| NSOB
-    NSPortal -->|OIDC| NSKeycloak
+    NSPortal -->|OIDC auth| NSKeycloak
 
-    NSOB -->|events| NSKafka["fs-messaging\nAMQ Streams Kafka"]
-    NSKafka -->|consume| NSEvents["fs-ob\nEvent Notifications"]
+    NSOB -->|events Kafka| NSKafka[fs-messaging AMQ Streams]
+    NSKafka -->|consume| NSEvents[fs-ob Event Notifications]
 
-    NSOB -->|SQL| NSDB["fs-database\nMySQL"]
+    NSOB -->|SQL| NSDB[fs-database MySQL]
     NSEvents -->|SQL| NSDB
     NSKeycloak -->|SQL| NSDB
-    NS3scale -->|SQL + Redis| NSDB
+    NS3scale -->|SQL Redis| NSDB
 
-    NSServiceMesh["fs-service-mesh\nIstio mTLS"]
-    NSOB -.->|mTLS| NSServiceMesh
-    NS3scale -.->|mTLS| NSServiceMesh
-    NSBackend -.->|mTLS| NSServiceMesh
+    NSServiceMesh[fs-service-mesh Istio mTLS]
+    NSOB -.->|mTLS sidecar| NSServiceMesh
+    NS3scale -.->|mTLS sidecar| NSServiceMesh
+    NSBackend -.->|mTLS sidecar| NSServiceMesh
 ```
 
 ---
