@@ -1,0 +1,246 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  WSO2 Financial Services Accelerator – Docker Compose
+#  Services:
+#    mysql                      → Shared database
+#    fs-is                      → WSO2 Identity Server + FS IS Accelerator
+#    fs-apim                    → WSO2 API Manager + FS APIM Accelerator
+#    consent-mgt-endpoint       → Consent Management REST API (standalone)
+#    event-notifications-endpoint → Event Notifications REST API (standalone)
+#    authentication-endpoint    → Authentication Endpoint (standalone)
+#    demo-backend               → Mock Bank Backend API (standalone)
+#    self-care-portal           → React SPA served by Nginx
+# ═══════════════════════════════════════════════════════════════════════════════
+
+networks:
+  fs-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  is-data:
+  apim-data:
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shared x-healthcheck snippet to keep service definitions DRY
+# ─────────────────────────────────────────────────────────────────────────────
+x-tomcat-healthcheck: &tomcat-healthcheck
+  interval: 20s
+  timeout: 5s
+  retries: 5
+  start_period: 60s
+
+services:
+
+  # ── MySQL Database ──────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: fs-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS:-wso2password}
+      MYSQL_USER: ${DB_USER:-wso2user}
+      MYSQL_PASSWORD: ${DB_PASS:-wso2password}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - fs-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASS:-wso2password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── WSO2 Identity Server + FS IS Accelerator ───────────────────────────────
+  fs-is:
+    build:
+      context: ..
+      dockerfile: integration/docker/fs-is/Dockerfile
+      args:
+        ACCELERATOR_VERSION: ${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    image: wso2-fs-is:${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    container_name: fs-is
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_TYPE: ${DB_TYPE:-mysql}
+      DB_USER: ${DB_USER:-wso2user}
+      DB_PASS: ${DB_PASS:-wso2password}
+      DB_FS_CONSENT: ${DB_FS_CONSENT:-fs_consentdb}
+      DB_FS_EVENTS: ${DB_FS_EVENTS:-fs_eventsdb}
+      WSO2_ADMIN_USER: ${WSO2_ADMIN_USER:-admin}
+      WSO2_ADMIN_PASS: ${WSO2_ADMIN_PASS:-admin}
+    ports:
+      - "9443:9443"   # HTTPS – management console / REST APIs / OIDC
+      - "9763:9763"   # HTTP
+    volumes:
+      - is-data:/home/wso2carbon/wso2is-7.1.0/repository/deployment
+    networks:
+      - fs-network
+    healthcheck:
+      test: ["CMD", "curl", "-sk", "https://localhost:9443/carbon/admin/login.jsp"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  # ── WSO2 API Manager + FS APIM Accelerator ────────────────────────────────
+  fs-apim:
+    build:
+      context: ..
+      dockerfile: integration/docker/fs-apim/Dockerfile
+      args:
+        ACCELERATOR_VERSION: ${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    image: wso2-fs-apim:${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    container_name: fs-apim
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      fs-is:
+        condition: service_healthy
+    environment:
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_TYPE: ${DB_TYPE:-mysql}
+      DB_USER: ${DB_USER:-wso2user}
+      DB_PASS: ${DB_PASS:-wso2password}
+      DB_APIMGT: ${DB_APIMGT:-apimgtdb}
+      DB_AM_CONFIG: ${DB_AM_CONFIG:-am_configdb}
+      DB_USER_STORE: ${DB_USER_STORE:-userdb}
+      IS_HOST: ${IS_HOST:-fs-is}
+      WSO2_ADMIN_USER: ${WSO2_ADMIN_USER:-admin}
+      WSO2_ADMIN_PASS: ${WSO2_ADMIN_PASS:-admin}
+    ports:
+      - "9444:9443"   # HTTPS – management console / publisher / devportal
+      - "8243:8243"   # HTTPS Gateway
+      - "8280:8280"   # HTTP Gateway
+    volumes:
+      - apim-data:/home/wso2carbon/wso2am-4.3.0/repository/deployment
+    networks:
+      - fs-network
+    healthcheck:
+      test: ["CMD", "curl", "-sk", "https://localhost:9443/carbon/admin/login.jsp"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+
+  # ── Consent Management Endpoint (standalone) ───────────────────────────────
+  consent-mgt-endpoint:
+    build:
+      context: ..
+      dockerfile: integration/docker/consent-mgt-endpoint/Dockerfile
+    image: fs-consent-mgt-endpoint:${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    container_name: fs-consent-mgt-endpoint
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-wso2user}
+      DB_PASS: ${DB_PASS:-wso2password}
+      DB_FS_CONSENT: ${DB_FS_CONSENT:-fs_consentdb}
+    ports:
+      - "8081:8080"
+    networks:
+      - fs-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/consent/health"]
+      <<: *tomcat-healthcheck
+
+  # ── Event Notifications Endpoint (standalone) ─────────────────────────────
+  event-notifications-endpoint:
+    build:
+      context: ..
+      dockerfile: integration/docker/event-notifications-endpoint/Dockerfile
+    image: fs-event-notifications-endpoint:${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    container_name: fs-event-notifications-endpoint
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-wso2user}
+      DB_PASS: ${DB_PASS:-wso2password}
+      DB_FS_EVENTS: ${DB_FS_EVENTS:-fs_eventsdb}
+    ports:
+      - "8082:8080"
+    networks:
+      - fs-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/event-notifications/health"]
+      <<: *tomcat-healthcheck
+
+  # ── Authentication Endpoint (standalone) ──────────────────────────────────
+  authentication-endpoint:
+    build:
+      context: ..
+      dockerfile: integration/docker/authentication-endpoint/Dockerfile
+    image: fs-authentication-endpoint:${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    container_name: fs-authentication-endpoint
+    restart: unless-stopped
+    depends_on:
+      fs-is:
+        condition: service_healthy
+    environment:
+      IS_HOST: ${IS_HOST:-fs-is}
+      IS_PORT: "9443"
+    ports:
+      - "8083:8080"
+    networks:
+      - fs-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/authenticationendpoint/"]
+      <<: *tomcat-healthcheck
+
+  # ── Demo Backend (mock bank APIs) ─────────────────────────────────────────
+  demo-backend:
+    build:
+      context: ..
+      dockerfile: integration/docker/demo-backend/Dockerfile
+    image: fs-demo-backend:${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    container_name: fs-demo-backend
+    restart: unless-stopped
+    ports:
+      - "${DEMO_BACKEND_PORT:-9090}:8080"
+    networks:
+      - fs-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/demo-backend/"]
+      <<: *tomcat-healthcheck
+
+  # ── Self-Care Portal (React SPA) ──────────────────────────────────────────
+  self-care-portal:
+    build:
+      context: ..
+      dockerfile: integration/docker/self-care-portal/Dockerfile
+    image: fs-self-care-portal:${ACCELERATOR_VERSION:-4.1.2-SNAPSHOT}
+    container_name: fs-self-care-portal
+    restart: unless-stopped
+    depends_on:
+      fs-is:
+        condition: service_healthy
+    ports:
+      - "${PORTAL_PORT:-3000}:80"
+    networks:
+      - fs-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

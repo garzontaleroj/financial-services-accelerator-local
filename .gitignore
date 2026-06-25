@@ -28,6 +28,10 @@ hs_err_pid*
 # maven target directories
 target
 
+# Docker – environment secrets (never commit real credentials)
+integration/.env
+
+
 
 # Ignore everything in this directory which are IDE specific
 .classpath
