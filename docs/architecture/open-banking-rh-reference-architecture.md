@@ -31,6 +31,12 @@
 
 Esta arquitectura de referencia describe el despliegue de Open Banking / Open Finance usando exclusivamente el ecosistema **Red Hat** sobre **OpenShift Container Platform (OCP)**. Los servicios de negocio financiero (Gestión de Consentimientos, Notificaciones de Eventos, APIs de Cuentas, Pagos y VRP) son implementados como microservicios **Quarkus 3.8** nativos para la nube.
 
+La propuesta tiene tres objetivos estratégicos:
+
+- **Vendor único** — toda la infraestructura, desde el gateway hasta el runtime de los microservicios, usa productos con soporte Red Hat. Esto simplifica los acuerdos de licenciamiento, el soporte técnico y las actualizaciones de seguridad.
+- **Cumplimiento regulatorio por diseño** — Keycloak incluye perfiles FAPI certificados por la OpenID Foundation. Las políticas de seguridad no son configuraciones manuales sino artefactos versionados en Git y validados en tiempo de despliegue.
+- **Arquitectura cloud-native** — todos los componentes operan como contenedores en OCP, escalan horizontalmente de forma autónoma (HPA), se despliegan mediante GitOps (ArgoCD) y se monitorean con el stack de observabilidad nativo de OpenShift.
+
 ### Capacidades principales
 
 | Capacidad | Componente Red Hat | Estándar cubierto |
@@ -61,6 +67,8 @@ Esta arquitectura de referencia describe el despliegue de Open Banking / Open Fi
 
 ## 2. Implementaciones Red Hat para Open Banking
 
+Antes de diseñar una arquitectura propia, es fundamental conocer qué ofrece Red Hat de forma nativa para el sector financiero. Esta sección documenta las capacidades ya disponibles en los productos Red Hat que son directamente aplicables a Open Banking, evitando desarrollos innecesarios y apoyándose en certificaciones y validaciones del ecosistema.
+
 ### 2.1 Keycloak y FAPI (Financial-grade API)
 
 Red Hat distribuye Keycloak (desde v21) con **perfiles globales de seguridad pre-configurados** para Open Banking. Estos perfiles cumplen los estándares internacionales requeridos para banca abierta:
@@ -87,7 +95,7 @@ Red Hat distribuye Keycloak (desde v21) con **perfiles globales de seguridad pre
 
 ### 2.2 Keycloak y PSD2 / Open Finance Colombia
 
-Keycloak provee nativamente:
+Para el contexto regulatorio colombiano (Superintendencia Financiera de Colombia — SFC) y la adopción del marco PSD2 europeo como referencia, Keycloak provee nativamente los siguientes mecanismos sin necesidad de desarrollo adicional:
 - **DCR (Dynamic Client Registration)** — RFC 7591, RFC 7592
 - **PAR (Pushed Authorization Requests)** — RFC 9126
 - **DPoP** — RFC 9449 (feature `dpop` en Keycloak 24+)
@@ -97,7 +105,7 @@ Keycloak provee nativamente:
 
 ### 2.3 Red Hat 3scale y Open Banking
 
-3scale API Management v2.14 incluye:
+3scale actúa como el punto de control centralizado para todas las APIs Open Banking expuestas hacia TPPs. Su rol no es solo proxy HTTP — es la capa de gobierno que aplica políticas de negocio (planes, límites, monetización) sobre las APIs técnicas expuestas por los microservicios Quarkus. 3scale API Management v2.14 incluye:
 - **Policies nativas** para rate limiting por TPP, transformación de headers, validación JWT
 - **Developer Portal** para onboarding self-service de TPPs con flujo de aprobación
 - **Analytics** por API, por plan, por aplicación — requerido para reporte regulatorio
@@ -105,7 +113,7 @@ Keycloak provee nativamente:
 
 ### 2.4 Red Hat en el ecosistema financiero global
 
-Red Hat trabaja con bancos líderes en implementaciones de Open Banking:
+Red Hat no es nuevo en el sector financiero. Las siguientes referencias validan la madurez de la plataforma para casos de uso bancarios en producción, incluyendo proyectos de modernización similares al objetivo de este documento:
 
 | Cliente / Partner | Caso de uso | Tecnología RH |
 |---|---|---|
@@ -120,7 +128,11 @@ Red Hat trabaja con bancos líderes en implementaciones de Open Banking:
 
 ## 3. Componentes de la Arquitectura
 
+La solución se divide en cinco capas lógicas, cada una con responsabilidades claras y aisladas. Esta separación permite escalar, actualizar y monitorear cada capa de forma independiente sin afectar a las demás.
+
 ### 3.1 Capa de API Management — Red Hat 3scale
+
+Esta capa es el único punto de entrada para los TPPs externos. Ningún TPP accede directamente a los microservicios Quarkus — toda llamada pasa obligatoriamente por APIcast, donde se valida el token OAuth2, se verifica el consentimiento, se aplica el rate limiting y se enriquecen los headers antes de reenviar la petición al backend.
 
 ```
 financial-services-accelerator-local/open-banking-rh/
@@ -136,6 +148,8 @@ Componentes 3scale:
 ```
 
 ### 3.2 Capa de Identidad y Consentimiento — Keycloak + Quarkus
+
+Esta es la capa más crítica de la arquitectura desde el punto de vista regulatorio. Keycloak gestiona las identidades de clientes y TPPs, emite y valida los tokens OAuth2/OIDC con perfiles FAPI. Los microservicios Quarkus implementan el ciclo de vida completo de los consentimientos (creación, autorización, validación, revocación) y el sistema de notificaciones de eventos (SET tokens RFC 8417) que informan a los TPPs sobre cambios de estado.
 
 ```
 open-banking-rh/
@@ -160,6 +174,8 @@ open-banking-rh/
 
 ### 3.3 Capa de APIs de Negocio — Quarkus Backend
 
+Implementa los contratos de la especificación Open Banking UK v4.0 como APIs REST. En la arquitectura actual utiliza datos de prueba (mock), pero el diseño permite sustituir las implementaciones por llamadas reales al core bancario sin cambiar los contratos de API expuestos hacia los TPPs. El patrón Strangler Fig permite migrar endpoint por endpoint en producción.
+
 ```
 open-banking-rh/ob-bank-backend/
 ├── AccountResource.java       # GET /accounts, /accounts/{id}
@@ -173,6 +189,8 @@ open-banking-rh/ob-bank-backend/
 
 ### 3.4 Capa de Mensajería — AMQ Streams (Kafka)
 
+Kafka desacopla los microservicios y garantiza la entrega de eventos con durabilidad configurable. Los eventos de consentimiento fluyen desde `ob-consent-service` hacia `ob-event-notifications` a través del topic `ob-consent-events`, permitiendo que ambos servicios escalen de forma independiente. El topic `ob-audit-events` actúa como un log inmutable de auditoría regulatoria con retención configurable para cumplir los 5 años exigidos por la SFC.
+
 ```
 Topics Kafka:
 ├── ob-consent-events          # Ciclo de vida consentimientos
@@ -185,141 +203,166 @@ Topics Kafka:
 
 ### 3.5 Capa de Observabilidad
 
+La observabilidad en Open Banking no es opcional — es un requisito regulatorio. Los bancos deben demostrar ante la SFC que pueden auditar cada acceso a datos de clientes, detectar anomalías en tiempo real y responder ante incidentes de seguridad. La arquitectura implementa los **tres pilares de observabilidad**: métricas, logs y trazas distribuidas, más un cuarto pilar específico de Open Banking: el **log de auditoría regulatoria**.
+
+- **Prometheus + Grafana** — Métricas operacionales (latencia, throughput, errores HTTP). Dashboards de SLA regulatorio que muestran el cumplimiento del límite de 2 segundos por API.
+- **Loki + Fluentd** — Agregación de logs de todos los pods. Loki (solución nativa de Grafana Labs, compatible con OCP) permite consultas de logs con el mismo lenguaje que Prometheus (LogQL), facilitando correlación directa entre métricas y logs en el mismo dashboard de Grafana.
+- **Jaeger (Distributed Tracing)** — Trazas end-to-end desde el gateway hasta la base de datos, usando el `x-b3-traceid` como correlationId. Esencial para diagnosticar latencias y auditar flujos de autorización FAPI.
+- **EFK Stack** — Elasticsearch + Fluentd + Kibana para el almacenamiento a largo plazo (5 años) de logs de auditoría regulatoria. Indexado por consentId, tppId y userId para búsquedas forenses.
+
 ```
 Monitoring Stack:
-├── Prometheus (vía OCP Monitoring)
-│   └── Métricas: APIs, JVM, DB pools, Kafka lag
+├── Prometheus (OCP Monitoring Stack)
+│   └── Metricas: latencia APIs, JVM heap, DB pools, Kafka consumer lag
 ├── Grafana
-│   └── Dashboards: SLA regulatorio, latencia p95/p99
-├── EFK Stack (Elasticsearch + Fluentd + Kibana)
-│   └── Logs de auditoría (retención 5 años)
-└── Jaeger (Distributed Tracing)
-    └── Trazas end-to-end por correlationId FAPI
+│   └── Dashboards: SLA regulatorio (p95/p99), TPP usage, consent funnel
+├── Loki + Fluentd
+│   └── Logs centralizados con LogQL — correlacion metricas/logs en Grafana
+├── Jaeger (via Red Hat Service Mesh)
+│   └── Trazas distribuidas — correlationId FAPI por peticion
+└── EFK Stack (Elasticsearch + Fluentd + Kibana)
+    └── Audit trail regulatorio — retencion 5 anos — indexado por consent/tpp/user
 ```
 
 ---
 
 ## 4. Diagrama de Arquitectura Lógica
 
+El siguiente diagrama representa la vista lógica completa de la solución Open Banking sobre Red Hat OCP. Se organiza en **siete capas horizontales** que fluyen de arriba hacia abajo:
+
+1. **Actores externos** — TPPs (terceros fintech), clientes bancarios (PSU) y administradores del banco.
+2. **DMZ / Ingress** — Punto de entrada único con terminación TLS gestionado por el HAProxy de OCP.
+3. **API Management (3scale)** — Capa de gobierno de APIs: autenticación OAuth2, rate limiting, políticas FAPI y Developer Portal para onboarding de TPPs.
+4. **Identidad y Consentimiento** — Keycloak gestiona identidades, DCR, SCA y emite tokens. Los microservicios Quarkus administran el ciclo de vida de consentimientos y notificaciones de eventos.
+5. **APIs de Negocio** — Backend Quarkus que expone las APIs Open Banking UK v4.0 (cuentas, pagos, VRP, confirmación de fondos).
+6. **Mensajería** — AMQ Streams (Kafka) desacopla eventos de consentimiento, pagos y auditoría entre microservicios.
+7. **Persistencia y Observabilidad** — MySQL para datos transaccionales; Prometheus, Grafana, Loki, Jaeger y EFK para visibilidad operacional.
+
+Las líneas continuas representan llamadas síncronas HTTP/gRPC; las líneas punteadas representan flujos de telemetría asíncrona.
+
 ```mermaid
 graph TB
-    subgraph "Actores"
-        TPP[TPP / App Fintech]
-        PSU[Cliente / PSU]
-        ADMIN[Admin Banco]
-    end
+    T1[TPP / App Fintech]
+    T2[Cliente - PSU]
+    T3[Admin Banco]
 
-    subgraph "DMZ — OCP Routes TLS"
-        INGRESS[OCP Ingress / HAProxy\nTLS Termination]
-    end
+    I1[OCP HAProxy - TLS Termination]
 
-    subgraph "API Management — 3scale"
-        direction TB
-        GW[APIcast Gateway\nOAuth2 + FAPI Policies]
-        DEV_PORTAL[Developer Portal\nTPP Self-Service Onboarding]
-        ADMIN_3S[Admin Portal\nAnalytics + Facturación]
-        ZYNC[Zync\nKeycloak ↔ 3scale sync]
-    end
+    G1[3scale APIcast
+OAuth2 + FAPI Policies]
+    G2[Developer Portal
+TPP Onboarding]
+    G3[Admin Portal
+Analytics]
+    G4[Zync
+Keycloak sync]
 
-    subgraph "Identidad y Consentimiento — Keycloak"
-        direction TB
-        KC[Keycloak 26\nRealm 'openbanking']
-        
-        subgraph "Keycloak Features"
-            DCR_KC[DCR Endpoint\nRFC 7591]
-            FAPI_POL[Client Policies FAPI 2\nPAR + DPoP + mTLS]
-            SCA_FLOW[Auth Flow SCA\nPassword + WebAuthn]
-            JWKS[JWKS Endpoint\nClaves públicas]
-        end
-        
-        subgraph "Quarkus Consent"
-            CONSENT_SVC[ob-consent-service\n:8081]
-            CONSENT_ADM[/api/fs/consent/v1.0\n/admin/consents]
-        end
-        
-        subgraph "Quarkus Events"
-            EVENTS_SVC[ob-event-notifications\n:8082]
-        end
-        
-        PORTAL[Self-Care Portal\nReact + nginx :80]
-    end
+    K1[Keycloak 26
+Realm openbanking]
+    K2[DCR Endpoint
+RFC 7591]
+    K3[FAPI 2 Policies
+PAR + DPoP + mTLS]
+    K4[Auth Flow SCA
+Password + WebAuthn]
 
-    subgraph "APIs de Negocio — Quarkus"
-        BE[ob-bank-backend\n:8083]
-        subgraph "Open Banking UK v4.0"
-            ACC[/accounts\n/balances\n/transactions]
-            PAY[/domestic-payments\n/domestic-vrps]
-            FUNDS[/funds-confirmations]
-        end
-    end
+    C1[ob-consent-service
+Quarkus :8081]
+    C2[ob-event-notifications
+Quarkus :8082]
+    C3[Self-Care Portal
+React + nginx :80]
 
-    subgraph "Mensajería — AMQ Streams"
-        KAFKA[(Kafka\n3 brokers)]
-        T_CONSENT[Topic: ob-consent-events]
-        T_PAYMENT[Topic: ob-payment-events]
-        T_AUDIT[Topic: ob-audit-events]
-    end
+    B1[ob-bank-backend
+Quarkus :8083]
+    B2[Accounts API
+v4.0]
+    B3[Payments API
+v4.0]
+    B4[Funds Confirmation
+v4.0]
 
-    subgraph "Persistencia"
-        DB_CONSENT[(MySQL\nob_consent)]
-        DB_EVENTS[(MySQL\nob_events)]
-        DB_KC[(MySQL\nkeycloak)]
-        DB_3S[(MySQL\n3scale)]
-    end
+    M1[AMQ Streams Kafka
+3 brokers]
+    M2[ob-consent-events]
+    M3[ob-payment-events]
+    M4[ob-audit-events]
 
-    subgraph "Observabilidad"
-        OBS[Prometheus + Grafana\nEFK + Jaeger]
-    end
+    D1[(MySQL ob_consent)]
+    D2[(MySQL ob_events)]
+    D3[(MySQL keycloak)]
+    D4[(MySQL 3scale)]
 
-    TPP -->|HTTPS + mTLS| INGRESS
-    PSU -->|HTTPS| INGRESS
-    ADMIN -->|HTTPS| INGRESS
+    O1[Prometheus + Grafana
+Metricas y Alertas]
+    O2[Loki + Fluentd
+Aggregacion de Logs]
+    O3[Jaeger
+Distributed Tracing]
+    O4[EFK Stack
+Auditoria 5 anos]
 
-    INGRESS --> GW
-    INGRESS --> KC
-    INGRESS --> PORTAL
-    INGRESS --> DEV_PORTAL
+    T1 -->|HTTPS mTLS| I1
+    T2 -->|HTTPS| I1
+    T3 -->|HTTPS| I1
 
-    GW -->|Token introspection| KC
-    GW -->|Consent validate| CONSENT_SVC
-    GW -->|API calls| BE
+    I1 --> G1
+    I1 --> K1
+    I1 --> C3
+    I1 --> G2
 
-    KC --> DCR_KC
-    KC --> FAPI_POL
-    KC --> SCA_FLOW
-    KC --> ZYNC
+    G1 -->|introspect token| K1
+    G1 -->|validate consent| C1
+    G1 -->|API call| B1
+    G4 --> G3
 
-    ZYNC --> ADMIN_3S
+    K1 --> K2
+    K1 --> K3
+    K1 --> K4
+    K1 --> G4
+    K1 --> D3
 
-    PSU -->|OAuth2 + SCA| KC
-    PSU --> PORTAL
-    PORTAL -->|Consent API| CONSENT_SVC
+    T2 -->|OAuth2 + SCA| K1
+    T2 --> C3
+    C3 -->|Consent API| C1
 
-    CONSENT_SVC --> DB_CONSENT
-    CONSENT_SVC --> T_CONSENT
-    EVENTS_SVC --> DB_EVENTS
-    T_CONSENT --> EVENTS_SVC
+    C1 --> D1
+    C1 --> M2
+    M2 --> M1
+    M1 --> C2
+    C2 --> D2
 
-    BE --> ACC
-    BE --> PAY
-    BE --> FUNDS
-    BE --> T_PAYMENT
-    BE --> T_AUDIT
+    B1 --> B2
+    B1 --> B3
+    B1 --> B4
+    B1 --> M3
+    B1 --> M4
+    M3 --> M1
+    M4 --> M1
 
-    KC --> DB_KC
-    GW --> DB_3S
+    G1 --> D4
 
-    CONSENT_SVC -.->|métricas/logs| OBS
-    GW -.->|métricas/logs| OBS
-    KC -.->|métricas/logs| OBS
-    BE -.->|métricas/logs| OBS
+    C1 -.->|metricas traces logs| O1
+    C1 -.->|logs| O2
+    C1 -.->|traces| O3
+    G1 -.->|metricas logs| O1
+    G1 -.->|logs| O2
+    K1 -.->|metricas traces| O1
+    K1 -.->|traces| O3
+    B1 -.->|metricas logs| O1
+    M1 -.->|audit logs| O4
+    M4 -.->|audit events| O4
 ```
 
 ---
 
 ## 5. Diagrama de Flujo de Petición (Request Flow)
 
+Esta sección documenta los cuatro flujos de petición más importantes de la arquitectura Open Banking. Cada diagrama de secuencia describe el camino exacto que recorre una petición, incluyendo los actores internos y los pasos de validación de seguridad en cada salto. Estos flujos son la base para definir las pruebas de integración end-to-end y para validar el cumplimiento regulatorio.
+
 ### 5.1 Flujo de Registro de TPP (DCR — Dynamic Client Registration)
+
+El registro dinámico de clientes es el proceso mediante el cual un TPP (fintech autorizado) obtiene sus credenciales OAuth2 para interactuar con las APIs del banco. En lugar de un proceso manual de configuración, DCR automatiza el registro mediante un software statement assertion (SSA) firmado por la entidad regulatoria. Keycloak valida esta firma, crea el client en el realm `openbanking` y sincroniza la aplicación en 3scale.
 
 ```mermaid
 sequenceDiagram
@@ -341,6 +384,8 @@ sequenceDiagram
 ```
 
 ### 5.2 Flujo de Consentimiento del Cliente (OAuth2 + SCA)
+
+El consentimiento es el núcleo regulatorio de Open Banking. El cliente bancario (PSU) debe autorizar explícitamente qué datos puede acceder un TPP, por cuánto tiempo y con qué granularidad. Este flujo implementa el **Authorization Code Flow + PKCE** de OAuth2 con un paso de **SCA (Strong Customer Authentication)** — dos factores de autenticación requeridos por PSD2 RTS y el marco colombiano de la SFC. El consentimiento se persiste en MySQL y su estado se sincroniza a través de Kafka hacia el sistema de notificaciones.
 
 ```mermaid
 sequenceDiagram
@@ -376,6 +421,8 @@ sequenceDiagram
 
 ### 5.3 Flujo de Llamada a API Protegida (Cuentas)
 
+Una vez que el TPP tiene un `access_token` vinculado a un consentimiento autorizado, puede consumir las APIs del banco. Este flujo muestra los controles de seguridad que se aplican en **cada petición**: validación del certificado mTLS del TPP, rate limiting, introspección del token en Keycloak, validación del estado del consentimiento y enriquecimiento de headers antes de llegar al backend. La auditoría de cada llamada se publica en Kafka de forma asíncrona para no impactar la latencia.
+
 ```mermaid
 sequenceDiagram
     participant TPP as TPP
@@ -407,6 +454,8 @@ sequenceDiagram
 ```
 
 ### 5.4 Flujo de Iniciación de Pago (Domestic Payment)
+
+Los pagos requieren controles adicionales respecto a la consulta de cuentas. FAPI 2 exige SCA específica para cada pago — el cliente debe confirmar la operación con segundo factor incluso si ya está autenticado. Una vez procesado el pago por el backend, el estado final (`AcceptedSettlementCompleted`) se notifica al TPP de forma asíncrona mediante un **SET token** (Security Event Token, RFC 8417) enviado a su webhook registrado.
 
 ```mermaid
 sequenceDiagram
@@ -442,6 +491,8 @@ sequenceDiagram
 ---
 
 ## 6. Diagrama de Componentes — Capa de API Management
+
+Red Hat 3scale API Management es el corazón de la capa de gobierno de APIs. Este diagrama muestra la arquitectura interna de 3scale desplegada en OCP y su relación con las seis APIs Open Banking publicadas. Cada API tiene asociado un conjunto de políticas que se aplican secuencialmente en el pipeline de APIcast: primero la validación mTLS del certificado del TPP, luego la validación del token OIDC contra Keycloak, después la política de consent enforcement que consulta al `ob-consent-service`, y finalmente el rate limiting que previene el abuso de la plataforma.
 
 ```mermaid
 graph LR
@@ -491,6 +542,10 @@ graph LR
 ---
 
 ## 7. Diagrama de Componentes — Capa de Identidad y Consentimiento
+
+Este diagrama detalla la relación entre Keycloak y los microservicios Quarkus de consentimiento y eventos. Keycloak es el único emisor de tokens en la plataforma — ningún otro componente emite JWTs. Los microservicios Quarkus se comunican con Keycloak únicamente para dos propósitos: validar tokens entrantes (via `quarkus-oidc`) y notificar cambios de estado de consentimiento (via `PUT /authorise` llamado desde los authentication flows de Keycloak).
+
+El `ob-consent-service` actúa también como componente de validación que 3scale consulta en cada petición de API. Esta arquitectura "validate-on-every-call" garantiza que si un cliente revoca un consentimiento, el bloqueo es efectivo en la siguiente petición — no al expirar el token.
 
 ```mermaid
 graph TB
@@ -561,6 +616,10 @@ graph TB
 
 ## 8. Arquitectura de Despliegue en OCP
 
+La arquitectura de despliegue organiza todos los componentes en **seis namespaces aislados** dentro del clúster OCP. El aislamiento por namespace tiene tres beneficios: seguridad (NetworkPolicies restringen el tráfico entre capas), operabilidad (cada equipo gestiona su namespace con su propio RBAC) y observabilidad (las métricas y logs se pueden filtrar por namespace).
+
+El acceso externo está centralizado en OCP Routes con TLS, que son el único vector de entrada desde internet. Los servicios internos se comunican exclusivamente a través de ClusterIP Services con mTLS habilitado por Red Hat Service Mesh (Istio). Ningún microservicio de negocio expone una Route pública directamente — todo tráfico de TPPs pasa por 3scale APIcast.
+
 ```
 Red Hat OpenShift Container Platform 4.14
 │
@@ -624,10 +683,11 @@ Red Hat OpenShift Container Platform 4.14
 │   └── AuthorizationPolicy: allow-inbound-tpp
 │
 └── Namespace: openshift-monitoring         [Observabilidad]
-    ├── Prometheus (OCP stack)
-    ├── Grafana (Community Operator)
-    ├── Elasticsearch + Fluentd + Kibana     (EFK Stack)
-    └── Jaeger (Red Hat Service Mesh)
+    ├── Prometheus (OCP Monitoring Stack)
+    ├── Grafana (Community Operator + Loki datasource)
+    ├── Loki + Fluentd                       (Logs operacionales)
+    ├── Elasticsearch + Fluentd + Kibana     (EFK — Auditoria regulatoria 5 anos)
+    └── Jaeger (Red Hat Service Mesh)        (Distributed Tracing)
 ```
 
 **Diagrama de comunicación entre namespaces:**
@@ -663,6 +723,10 @@ graph LR
 ---
 
 ## 9. Modelo de Datos y Bases de Datos
+
+El modelo de datos de Open Banking es deliberadamente minimalista: los consentimientos y las notificaciones de eventos son las únicas entidades propias de la solución. El resto del estado (identidades de usuarios, clients OAuth2, sesiones) lo gestiona Keycloak en su propia base de datos, y las métricas de API las gestiona 3scale en la suya. Esta separación evita el acoplamiento entre capas y permite escalar cada base de datos de forma independiente.
+
+Todas las migraciones de esquema se gestionan con **Flyway**, que ejecuta automáticamente los scripts al arrancar el servicio Quarkus. Esto garantiza que el esquema de base de datos está siempre en sincronía con la versión del código desplegada, un requisito crítico en entornos con despliegues frecuentes (GitOps).
 
 ### 9.1 Base de datos ob_consent (Flyway V1)
 
@@ -728,7 +792,11 @@ CREATE TABLE ob_event_notification (
 
 ## 10. Políticas de API (3scale)
 
+Las políticas de 3scale son el mecanismo mediante el cual se implementan los requisitos de seguridad FAPI sin modificar el código de los microservicios backend. Funcionan como un pipeline de middleware en APIcast: cada petición entrante atraviesa las políticas en orden antes de llegar al servicio destino. Si cualquier política falla (token inválido, consentimiento revocado, rate limit excedido), la petición se rechaza con el código HTTP apropiado y se registra en el sistema de auditoría.
+
 ### 10.1 Política OIDC — Validación de Tokens Keycloak
+
+Primera línea de defensa. APIcast verifica la firma del JWT usando las claves públicas de Keycloak (descargadas del endpoint JWKS), valida la expiración del token y extrae los claims relevantes (consent_id, azp, scope) que las políticas siguientes necesitarán.
 
 ```yaml
 # APIcast Policy: OIDC
@@ -747,6 +815,8 @@ CREATE TABLE ob_event_notification (
 ```
 
 ### 10.2 Política Rate Limiting por TPP
+
+Protege la plataforma contra el uso abusivo. El límite se aplica por `client_id` del TPP (claim `azp` del JWT), no por IP, lo que permite que un TPP con múltiples servidores comparta el mismo límite. Los límites son configurables por plan de 3scale, permitiendo diferentes cuotas para TPPs en sandbox, producción básica y producción premium.
 
 ```yaml
 # APIcast Policy: Rate Limiting
@@ -770,6 +840,8 @@ CREATE TABLE ob_event_notification (
 ```
 
 ### 10.3 Política Consent Enforcement (Custom Camel K)
+
+Esta política es la más crítica desde el punto de vista regulatorio. En cada petición de API (no solo al inicio de sesión), verifica que el consentimiento asociado al token sigue en estado `AUTHORISED` y no ha expirado. La validación se delega al `ob-consent-service` para garantizar que una revocación por parte del cliente tiene efecto inmediato. Se implementa como una ruta **Apache Camel K** que se ejecuta como contenedor sidecar de APIcast.
 
 ```java
 // Ruta Camel K: ConsentEnforcementRoute.java
@@ -817,7 +889,11 @@ public class ConsentEnforcementRoute extends RouteBuilder {
 
 ## 11. Consideraciones de Seguridad y FAPI
 
+La seguridad en Open Banking no es una capa adicional — es una restricción de diseño que afecta cada componente de la arquitectura. El estándar FAPI (Financial-grade API) define requisitos de seguridad más estrictos que los de OAuth2/OIDC convencional, específicamente diseñados para mitigar los vectores de ataque más comunes en servicios bancarios: interceptación de tokens, replay attacks, phishing de redirects y acceso no autorizado mediante tokens robados.
+
 ### 11.1 Perfiles FAPI implementados por Keycloak
+
+La ventaja competitiva de usar Keycloak para Open Banking es que estos perfiles están **pre-configurados y validados** por el equipo de Keycloak contra las especificaciones de la OpenID Foundation. No es necesario implementarlos manualmente — el administrador solo necesita activar la Client Policy correspondiente en el realm.
 
 Red Hat incluye en Keycloak 26 los siguientes perfiles listos para producción:
 
@@ -842,6 +918,8 @@ Global Client Profiles (pre-configurados):
 ```
 
 ### 11.2 Controles de seguridad por capa
+
+Cada capa de la arquitectura implementa controles de seguridad independientes. Esta estrategia de **defensa en profundidad** garantiza que el compromiso de un componente no implica el compromiso de toda la plataforma. Por ejemplo, aunque un atacante lograra inyectar un token inválido, la validación de consentimiento en `ob-consent-service` lo rechazaría; aunque lograra un token válido para un consentimiento revocado, el estado en base de datos bloquearía la petición.
 
 | Capa | Control | Implementación |
 |---|---|---|
@@ -882,6 +960,10 @@ Client Policy FAPI 2:
 ---
 
 ## 12. Escalabilidad y Alta Disponibilidad
+
+Los servicios Open Banking son servicios críticos de infraestructura financiera — su indisponibilidad tiene consecuencias regulatorias directas. La SFC y las normas PSD2 exigen disponibilidad mínima del 99.5% para los endpoints de APIs bancarias. La arquitectura propuesta supera estos requisitos mediante escalado horizontal automático, múltiples réplicas con distribución geográfica dentro del clúster y mecanismos de recuperación automática.
+
+El principio rector es: **ningún componente tiene un único punto de fallo (SPOF)**. Keycloak opera en cluster con cache Infinispan distribuida, MySQL en InnoDB Cluster de 3 nodos, Kafka con 3 brokers y factor de replicación 2, y los microservicios Quarkus con mínimo 2 réplicas distribuidas en diferentes nodos OCP.
 
 ### 12.1 SLA y objetivos de disponibilidad
 
@@ -1005,7 +1087,13 @@ spec:
 
 ## 13. Manifiestos OCP de Referencia
 
+Esta sección proporciona los manifiestos Kubernetes/OCP de referencia para los componentes principales de la solución. Estos manifiestos están diseñados para entornos de producción: incluyen configuración de seguridad (`securityContext` con principio de mínimo privilegio), health checks correctamente configurados para Quarkus, inyección de secretos desde OCP Secrets (no variables hardcodeadas) e integración con el Service Mesh de Istio.
+
+En una implementación real, estos manifiestos se gestionarían con **Kustomize** (overlays por entorno: dev/staging/prod) y se desplegarían mediante **ArgoCD** en un flujo GitOps donde cualquier cambio en el repositorio Git se refleja automáticamente en el clúster.
+
 ### 13.1 Deployment — ob-consent-service
+
+Este Deployment define las especificaciones del pod para `ob-consent-service`. Puntos clave: la anotación `sidecar.istio.io/inject: true` activa el sidecar de Istio para mTLS automático; el `securityContext` elimina todos los privilegios del proceso; los health checks usan el endpoint `/q/health` nativo de Quarkus SmallRye Health; las credenciales de base de datos se inyectan desde un OCP Secret en lugar de estar en el manifiesto.
 
 ```yaml
 apiVersion: apps/v1
@@ -1084,6 +1172,8 @@ spec:
 
 ### 13.2 Service + Route — ob-consent-service
 
+El Service expone el pod internamente en el clúster (ClusterIP). La Route tiene una restricción de IP whitelist que limita el acceso a la red interna del clúster (`10.0.0.0/8`), garantizando que ningún TPP externo puede acceder directamente al `ob-consent-service` — deben pasar obligatoriamente por 3scale APIcast, donde se aplican todas las políticas de seguridad.
+
 ```yaml
 ---
 apiVersion: v1
@@ -1120,6 +1210,8 @@ spec:
 
 ### 13.3 NetworkPolicy — aislamiento entre namespaces
 
+Las NetworkPolicies implementan el modelo de **zero-trust networking** entre namespaces de OCP. Por defecto, todos los pods del namespace `fs-ob` rechazan tráfico entrante de cualquier origen. Solo se permite tráfico desde los namespaces `fs-3scale` (APIcast), `fs-keycloak` (auth flows) y `fs-service-mesh` (Istio sidecars). Este control es la salvaguarda final que garantiza que incluso si un atacante comprometiera un pod en otro namespace, no podría acceder a los servicios Open Banking directamente.
+
 ```yaml
 # Solo 3scale y Keycloak pueden llamar a los servicios Quarkus
 apiVersion: networking.k8s.io/v1
@@ -1153,6 +1245,8 @@ spec:
 
 ### 13.4 KafkaTopic — ob-consent-events
 
+Este manifiesto de AMQ Streams (Strimzi Operator) define el topic Kafka para eventos de consentimiento. La configuración de `min.insync.replicas: 2` garantiza que un mensaje solo se confirma como escrito cuando al menos 2 de los 3 brokers lo han persistido, lo que protege contra la pérdida de eventos en caso de fallo de un broker. La retención de 7 días permite reintentos de procesamiento si `ob-event-notifications` tiene una interrupción temporal.
+
 ```yaml
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
@@ -1184,6 +1278,8 @@ spec:
 | Red Hat Service Mesh | https://docs.openshift.com/container-platform/latest/service_mesh/v2x/ossm-about.html |
 | Quarkus OIDC | https://quarkus.io/guides/security-oidc-code-flow-authentication |
 | AMQ Streams (Kafka) | https://access.redhat.com/documentation/en-us/red_hat_amq_streams |
+| Loki on OCP | https://docs.openshift.com/container-platform/latest/observability/logging/log_storage/installing-log-storage.html |
+| Jaeger Distributed Tracing | https://docs.openshift.com/container-platform/latest/observability/distr_tracing/distr_tracing_jaeger/distr-tracing-jaeger-installing.html |
 | Red Hat Financial Services | https://www.redhat.com/en/solutions/financial-services |
 
 ### Estándares Open Banking implementados
